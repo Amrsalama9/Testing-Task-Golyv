@@ -6,130 +6,189 @@ import org.testng.SkipException;
 import org.testng.annotations.Test;
 
 import java.util.List;
+import java.util.Map;
 
 import static io.restassured.RestAssured.given;
 
 /**
- * Google Places API tests — text search for restaurants near Marsa Alam.
- * Endpoint: GET https://maps.googleapis.com/maps/api/place/textsearch/json
+ * Google Places API (New) tests — text search for restaurants near Marsa Alam.
+ *
+ * Google replaced the old GET /maps/api/place/textsearch endpoint with a new
+ * POST-based API at places.googleapis.com/v1 in 2023. The old one is now "Legacy"
+ * and will eventually be shut down. This suite uses the new endpoint.
+ *
+ * New endpoint:  POST https://places.googleapis.com/v1/places:searchText
+ * Nearby search: POST https://places.googleapis.com/v1/places:searchNearby
+ *
+ * Auth: API key goes in the X-Goog-Api-Key header, not a query param.
+ * Field mask: X-Goog-FieldMask header tells the API which fields to return.
  *
  * Tests skip if GOOGLE_PLACES_KEY is not set.
  */
 public class RestaurantApiTest extends BaseApiTest {
 
-    private static final String TEXT_SEARCH   = "/textsearch/json";
-    private static final String NEARBY_SEARCH = "/nearbysearch/json";
-    private static final String QUERY         = "restaurant near Marsa Alam";
+    private static final String TEXT_SEARCH   = "/places:searchText";
+    private static final String NEARBY_SEARCH = "/places:searchNearby";
 
-    @Test(description = "TC_API_RS_001-008,010,012 - Places text search response is valid")
+    @Test(description = "TC_API_RS_001-008,010,012 - Places text search returns valid restaurant data")
     public void restaurantSearchResponseIsValid() {
         skipIfNoKey();
 
+        // New Places API uses POST with JSON body and field mask header
+        String body = """
+                {
+                  "textQuery": "restaurant near Marsa Alam",
+                  "includedType": "restaurant",
+                  "languageCode": "en"
+                }
+                """;
+
+        String fieldMask = "places.id,places.displayName,places.formattedAddress," +
+                           "places.location,places.rating,places.types,places.businessStatus";
+
         Response response = given().spec(requestSpec)
                 .baseUri(config.getPlacesBaseUrl())
-                .queryParam("query", QUERY)
-                .queryParam("type",  "restaurant")
-                .queryParam("key",   config.getPlacesApiKey())
-                .get(TEXT_SEARCH);
+                .header("X-Goog-Api-Key",   config.getPlacesApiKey())
+                .header("X-Goog-FieldMask",  fieldMask)
+                .header("Content-Type",      "application/json")
+                .body(body)
+                .post(TEXT_SEARCH);
 
         long ms = response.time();
         log.info("Places API response time: {}ms", ms);
 
         SoftAssertions soft = new SoftAssertions();
 
+        // TC_API_RS_001
         soft.assertThat(response.statusCode()).as("expect HTTP 200").isEqualTo(200);
 
-        String status = response.jsonPath().getString("status");
-        log.info("status: {}", status);
-        soft.assertThat(status).as("status should be OK").isEqualTo("OK");
+        // TC_API_RS_003
+        List<Object> places = response.jsonPath().getList("places");
+        soft.assertThat(places).as("places array should not be empty").isNotNull().isNotEmpty();
 
-        List<Object> results = response.jsonPath().getList("results");
-        soft.assertThat(results).as("results should not be empty").isNotNull().isNotEmpty();
+        if (places != null && !places.isEmpty()) {
+            int count = places.size();
+            log.info("Restaurant results: {}", count);
 
-        if (results != null && !results.isEmpty()) {
-            for (int i = 0; i < results.size(); i++) {
-                String name = response.jsonPath().getString("results[" + i + "].name");
-                soft.assertThat(name).as("results[" + i + "].name should not be blank").isNotNull().isNotBlank();
+            for (int i = 0; i < count; i++) {
+                // TC_API_RS_004 – display name
+                String name = response.jsonPath().getString("places[" + i + "].displayName.text");
+                soft.assertThat(name)
+                    .as("places[" + i + "].displayName.text should not be blank")
+                    .isNotNull().isNotBlank();
 
-                Double lat = response.jsonPath().get("results[" + i + "].geometry.location.lat");
-                Double lng = response.jsonPath().get("results[" + i + "].geometry.location.lng");
-                soft.assertThat(lat).as("results[" + i + "] lat should exist").isNotNull();
-                soft.assertThat(lng).as("results[" + i + "] lng should exist").isNotNull();
+                // TC_API_RS_005 – coordinates present
+                Double lat = response.jsonPath().get("places[" + i + "].location.latitude");
+                Double lng = response.jsonPath().get("places[" + i + "].location.longitude");
+                soft.assertThat(lat).as("places[" + i + "] latitude should exist").isNotNull();
+                soft.assertThat(lng).as("places[" + i + "] longitude should exist").isNotNull();
 
+                // TC_API_RS_006 – coordinates in Marsa Alam region
                 if (lat != null && lng != null) {
-                    soft.assertThat(lat).as("lat should be in Marsa Alam region").isBetween(23.0, 27.0);
-                    soft.assertThat(lng).as("lng should be in Marsa Alam region").isBetween(33.0, 37.0);
+                    soft.assertThat(lat).as("lat should be in Marsa Alam region (~23-27N)").isBetween(23.0, 27.0);
+                    soft.assertThat(lng).as("lng should be in Marsa Alam region (~33-37E)").isBetween(33.0, 37.0);
                 }
 
-                String placeId = response.jsonPath().getString("results[" + i + "].place_id");
-                soft.assertThat(placeId).as("place_id should be present").isNotNull().isNotBlank();
+                // TC_API_RS_007 – place id
+                String placeId = response.jsonPath().getString("places[" + i + "].id");
+                soft.assertThat(placeId).as("places[" + i + "].id should be present").isNotNull().isNotBlank();
 
-                Object ratingObj = response.jsonPath().get("results[" + i + "].rating");
+                // TC_API_RS_008 – rating range when present
+                Object ratingObj = response.jsonPath().get("places[" + i + "].rating");
                 if (ratingObj != null) {
                     double rating = ((Number) ratingObj).doubleValue();
                     soft.assertThat(rating).as("rating should be 1.0-5.0").isBetween(1.0, 5.0);
                 }
 
-                List<String> types = response.jsonPath().getList("results[" + i + "].types");
+                // TC_API_RS_012 – types include something food-related
+                List<String> types = response.jsonPath().getList("places[" + i + "].types");
                 if (types != null) {
                     boolean isFood = types.stream().anyMatch(t ->
                             t.contains("restaurant") || t.contains("food") ||
                             t.contains("meal_takeaway") || t.contains("cafe") || t.contains("bar"));
-                    soft.assertThat(isFood).as("results[" + i + "] should have a food-related type").isTrue();
+                    soft.assertThat(isFood)
+                        .as("places[" + i + "] should have a food-related type, got: " + types)
+                        .isTrue();
                 }
             }
         }
 
-        soft.assertThat(ms).as("should respond in under 4 seconds").isLessThan(4000L);
+        // TC_API_RS_010
+        soft.assertThat(ms).as("response should come back under 4 seconds").isLessThan(4000L);
+
         soft.assertAll();
     }
 
-    @Test(description = "TC_API_RS_009 - nearby search by prominence returns higher-rated places first", priority = 2)
+    @Test(description = "TC_API_RS_009 - nearby search returns results ordered by rating descending", priority = 2)
     public void nearbySearchOrderedByRating() {
         skipIfNoKey();
 
-        // Marsa Alam coords: 25.0671, 34.8923
+        // Marsa Alam coordinates: 25.0671N, 34.8923E
+        String body = """
+                {
+                  "includedTypes": ["restaurant"],
+                  "maxResultCount": 10,
+                  "locationRestriction": {
+                    "circle": {
+                      "center": {
+                        "latitude": 25.0671,
+                        "longitude": 34.8923
+                      },
+                      "radius": 10000.0
+                    }
+                  },
+                  "rankPreference": "POPULARITY"
+                }
+                """;
+
         Response response = given().spec(requestSpec)
                 .baseUri(config.getPlacesBaseUrl())
-                .queryParam("location", "25.0671,34.8923")
-                .queryParam("radius",   10000)
-                .queryParam("type",     "restaurant")
-                .queryParam("rankby",   "prominence")
-                .queryParam("key",      config.getPlacesApiKey())
-                .get(NEARBY_SEARCH);
+                .header("X-Goog-Api-Key",  config.getPlacesApiKey())
+                .header("X-Goog-FieldMask", "places.id,places.displayName,places.rating")
+                .header("Content-Type",     "application/json")
+                .body(body)
+                .post(NEARBY_SEARCH);
 
         SoftAssertions soft = new SoftAssertions();
         soft.assertThat(response.statusCode()).isEqualTo(200);
 
-        List<Object> results = response.jsonPath().getList("results");
-        if (results != null && results.size() >= 2) {
-            Double first  = toDouble(response.jsonPath().get("results[0].rating"));
-            Double second = toDouble(response.jsonPath().get("results[1].rating"));
+        List<Object> places = response.jsonPath().getList("places");
+        if (places != null && places.size() >= 2) {
+            Double first  = toDouble(response.jsonPath().get("places[0].rating"));
+            Double second = toDouble(response.jsonPath().get("places[1].rating"));
             if (first != null && second != null) {
                 log.info("First rating: {} | Second rating: {}", first, second);
                 soft.assertThat(first)
-                    .as("first result rating should be >= second when sorted by prominence")
+                    .as("first result rating should be >= second when sorted by popularity")
                     .isGreaterThanOrEqualTo(second);
             }
         }
         soft.assertAll();
     }
 
-    @Test(description = "TC_API_RS_011 - invalid key returns REQUEST_DENIED", priority = 3)
-    public void invalidKeyReturnsErrorStatus() {
+    @Test(description = "TC_API_RS_011 - invalid API key returns 403", priority = 3)
+    public void invalidKeyReturns403() {
+        String body = """
+                {
+                  "textQuery": "restaurant near Marsa Alam"
+                }
+                """;
+
         Response response = given().spec(requestSpec)
                 .baseUri(config.getPlacesBaseUrl())
-                .queryParam("query", QUERY)
-                .queryParam("key",   "INVALID_KEY_XXXXXXXXXXXXXXXX")
-                .get(TEXT_SEARCH);
+                .header("X-Goog-Api-Key",  "INVALID_KEY_XXXXXXXXXXXXXXXX")
+                .header("X-Goog-FieldMask", "places.displayName")
+                .header("Content-Type",     "application/json")
+                .body(body)
+                .post(TEXT_SEARCH);
 
-        String status = response.jsonPath().getString("status");
-        log.info("Status with bad key: {}", status);
+        log.info("Status with bad key: {}", response.statusCode());
 
+        // New Places API returns 403 for invalid/unauthorized keys
         SoftAssertions soft = new SoftAssertions();
-        soft.assertThat(status)
-            .as("should get REQUEST_DENIED or INVALID_REQUEST with a bad key")
-            .isIn("REQUEST_DENIED", "INVALID_REQUEST");
+        soft.assertThat(response.statusCode())
+            .as("should return 403 with an invalid API key")
+            .isEqualTo(403);
         soft.assertAll();
     }
 

@@ -174,7 +174,9 @@ Priority: P3
 
 ## Weather – OpenWeatherMap API
 
-Base URL: https://api.openweathermap.org/data/2.5
+Endpoint base: https://api.openweathermap.org/data/2.5
+
+Note: the /data/2.5/weather endpoint (current weather) is still active on free tier accounts. The /data/2.5/onecall was the one deprecated in June 2024 — that's a different endpoint. So as long as you have a valid free key, these tests should work.
 
 **TC_API_WX_001**
 GET /weather with q=Marsa Alam,EG, units=metric, and a valid API key.
@@ -230,16 +232,18 @@ Priority: P1
 
 ## Restaurants – Google Places API
 
-Base URL: https://maps.googleapis.com/maps/api/place
+Endpoint base: https://places.googleapis.com/v1
+
+Note: Google replaced the old Places API (maps.googleapis.com/maps/api/place) with a new version in 2023. The new API uses POST requests instead of GET, takes the API key in an X-Goog-Api-Key header instead of a query param, and returns places[] instead of results[]. The old endpoint is now called "Legacy" and will be shut down eventually. All tests below use the new API.
 
 **TC_API_RS_001**
-GET /textsearch/json with query="restaurant near Marsa Alam", type=restaurant, and a valid key.
+POST to /places:searchText with body {"textQuery": "restaurant near Marsa Alam", "includedType": "restaurant"} and X-Goog-Api-Key header set to a valid key.
 Expected: HTTP 200.
 Priority: P1
 
 **TC_API_RS_002**
-Check the status field in the response body.
-Expected: "OK". If it's ZERO_RESULTS or REQUEST_DENIED, something is wrong with the query or the key.
+Check the response — the new Places API doesn't have a "status" field like the old one did. Instead check that the places[] array is present in the body. If you get an "error" object back, that's the equivalent of the old REQUEST_DENIED.
+Expected: No error object, and a places[] array in the response.
 Priority: P1
 
 **TC_API_RS_003**
@@ -248,18 +252,18 @@ Expected: At least one restaurant in there. Marsa Alam has restaurants, so an em
 Priority: P1
 
 **TC_API_RS_004**
-Go through each item in results and check the name field.
-Expected: Every result has a name. A restaurant without a name in the response is a data integrity issue.
+Go through each item in places[] and check displayName.text (the new API renamed "name" to "displayName.text").
+Expected: Every place has a display name. A restaurant without a name in the response is a data integrity issue.
 Priority: P1
 
 **TC_API_RS_005**
-For each result, check geometry.location.
-Expected: Both lat and lng are present. Without coordinates, the result is not very useful and suggests the response structure changed.
+For each place, check location.latitude and location.longitude (the new API renamed "geometry.location" to just "location").
+Expected: Both latitude and longitude are present for every result.
 Priority: P2
 
 **TC_API_RS_006**
 Check the actual lat/lng values against the expected location.
-Expected: lat is between 23 and 27, lng is between 33 and 37. If coordinates are totally off (like showing a restaurant in Europe), the query matched the wrong location.
+Expected: latitude is between 23 and 27, longitude is between 33 and 37. If coordinates are totally off, the query matched the wrong location.
 Priority: P2
 
 **TC_API_RS_007**
@@ -283,8 +287,8 @@ Expected: Under 4 seconds. Google's APIs are generally fast but 4s gives some br
 Priority: P2
 
 **TC_API_RS_011**
-Send the request with a clearly wrong API key.
-Expected: status in the response body is REQUEST_DENIED or INVALID_REQUEST. The API should not return real data with a bad key.
+Send the POST request with a clearly wrong value in the X-Goog-Api-Key header.
+Expected: HTTP 403. The new API returns a 403 HTTP status for invalid keys rather than a 200 with REQUEST_DENIED in the body like the old one used to.
 Priority: P1
 
 **TC_API_RS_012**
