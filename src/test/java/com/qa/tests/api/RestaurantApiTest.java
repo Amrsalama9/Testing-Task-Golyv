@@ -27,7 +27,7 @@ public class RestaurantApiTest extends BaseApiTest {
     private static final String TEXT_SEARCH   = "/places:searchText";
     private static final String NEARBY_SEARCH = "/places:searchNearby";
 
-    @Test(description = "TC_API_RS_001-008,010,012 - Places text search returns valid restaurant data")
+    @Test(description = "TC_API_RS_001-008,010,012 - Places text search returns valid restaurant data", groups = {"api"})
     public void restaurantSearchResponseIsValid() {
         skipIfNoKey();
 
@@ -104,7 +104,7 @@ public class RestaurantApiTest extends BaseApiTest {
         soft.assertAll();
     }
 
-    @Test(description = "TC_API_RS_009 - nearby search returns results ordered by rating descending", priority = 2)
+    @Test(description = "TC_API_RS_009 - nearby search returns results ordered by rating descending", groups = {"api"}, priority = 2)
     public void nearbySearchOrderedByRating() {
         skipIfNoKey();
 
@@ -146,7 +146,7 @@ public class RestaurantApiTest extends BaseApiTest {
         soft.assertAll();
     }
 
-    @Test(description = "TC_API_RS_011 - invalid API key returns 403", priority = 3)
+    @Test(description = "TC_API_RS_011 - invalid API key returns 403", groups = {"api"}, priority = 3)
     public void invalidKeyReturns403() {
         String body = "{\"textQuery\": \"restaurant near Marsa Alam\"}";
 

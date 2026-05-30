@@ -8,7 +8,7 @@ import org.testng.annotations.Test;
 
 public class WeatherSearchTest extends BaseTest {
 
-    @Test(description = "TC_WX_001 - weather search returns a SERP")
+    @Test(description = "TC_WX_001 - weather search returns a SERP", groups = {"ui"})
     public void weatherSearchReturnsSERP() {
         GoogleSearchPage page = new GoogleSearchPage(driver);
         page.open(config.getGoogleBaseUrl()).search(config.getWeatherQuery());
@@ -21,7 +21,7 @@ public class WeatherSearchTest extends BaseTest {
         soft.assertAll();
     }
 
-    @Test(description = "TC_WX_002 - weather widget appears on results page", priority = 2)
+    @Test(description = "TC_WX_002 - weather widget appears on results page", groups = {"ui"}, priority = 2)
     public void weatherWidgetIsVisible() {
         GoogleSearchPage page = new GoogleSearchPage(driver);
         page.open(config.getGoogleBaseUrl()).search(config.getWeatherQuery());
@@ -37,7 +37,7 @@ public class WeatherSearchTest extends BaseTest {
         soft.assertAll();
     }
 
-    @Test(description = "TC_WX_003 - widget location label matches Marsa Alam", priority = 3)
+    @Test(description = "TC_WX_003 - widget location label matches Marsa Alam", groups = {"ui"}, priority = 3)
     public void weatherLocationIsCorrect() {
         GoogleSearchPage page = new GoogleSearchPage(driver);
         page.open(config.getGoogleBaseUrl()).search(config.getWeatherQuery());
@@ -53,7 +53,7 @@ public class WeatherSearchTest extends BaseTest {
         soft.assertAll();
     }
 
-    @Test(description = "TC_WX_004 - widget shows a temperature", priority = 4)
+    @Test(description = "TC_WX_004 - widget shows a temperature", groups = {"ui"}, priority = 4)
     public void weatherTemperatureIsPresent() {
         GoogleSearchPage page = new GoogleSearchPage(driver);
         page.open(config.getGoogleBaseUrl()).search(config.getWeatherQuery());
@@ -66,7 +66,7 @@ public class WeatherSearchTest extends BaseTest {
         soft.assertAll();
     }
 
-    @Test(description = "TC_WX_005 - widget shows a weather condition", priority = 5)
+    @Test(description = "TC_WX_005 - widget shows a weather condition", groups = {"ui"}, priority = 5)
     public void weatherConditionIsPresent() {
         GoogleSearchPage page = new GoogleSearchPage(driver);
         page.open(config.getGoogleBaseUrl()).search(config.getWeatherQuery());
@@ -79,7 +79,7 @@ public class WeatherSearchTest extends BaseTest {
         soft.assertAll();
     }
 
-    @Test(description = "TC_WX_006 - temperature is within realistic range for Marsa Alam", priority = 6)
+    @Test(description = "TC_WX_006 - temperature is within realistic range for Marsa Alam", groups = {"ui"}, priority = 6)
     public void weatherTemperatureIsRealistic() {
         GoogleSearchPage page = new GoogleSearchPage(driver);
         page.open(config.getGoogleBaseUrl()).search(config.getWeatherQuery());

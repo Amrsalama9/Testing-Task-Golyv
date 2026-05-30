@@ -51,7 +51,7 @@ public class FlightApiTest extends BaseApiTest {
         log.info("Amadeus token obtained");
     }
 
-    @Test(description = "TC_API_FL_001-002 - flight offers endpoint returns 200 for Cairo to Marsa Alam")
+    @Test(description = "TC_API_FL_001-002 - flight offers endpoint returns 200 for Cairo to Marsa Alam", groups = {"api"})
     public void flightOffersReturns200() {
         skipIfNoCredentials();
 
@@ -68,7 +68,7 @@ public class FlightApiTest extends BaseApiTest {
                .statusCode(200);
     }
 
-    @Test(description = "TC_API_FL_003-010 - flight offers payload is correct", priority = 2)
+    @Test(description = "TC_API_FL_003-010 - flight offers payload is correct", groups = {"api"}, priority = 2)
     public void flightOffersPayloadIsValid() {
         skipIfNoCredentials();
 

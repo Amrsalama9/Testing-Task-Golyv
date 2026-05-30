@@ -11,7 +11,7 @@ import java.util.List;
 
 public class RestaurantSearchTest extends BaseTest {
 
-    @Test(description = "TC_RS_001 - restaurant search loads a SERP")
+    @Test(description = "TC_RS_001 - restaurant search loads a SERP", groups = {"ui"})
     public void restaurantSearchReturnsSERP() {
         GoogleSearchPage page = new GoogleSearchPage(driver);
         page.open(config.getGoogleBaseUrl()).search(config.getRestaurantQuery());
@@ -24,7 +24,7 @@ public class RestaurantSearchTest extends BaseTest {
         soft.assertAll();
     }
 
-    @Test(description = "TC_RS_002 - at least one restaurant card is shown", priority = 2)
+    @Test(description = "TC_RS_002 - at least one restaurant card is shown", groups = {"ui"}, priority = 2)
     public void restaurantResultsArePresent() {
         GoogleSearchPage page = new GoogleSearchPage(driver);
         page.open(config.getGoogleBaseUrl()).search(config.getRestaurantQuery());
@@ -38,7 +38,7 @@ public class RestaurantSearchTest extends BaseTest {
         soft.assertAll();
     }
 
-    @Test(description = "TC_RS_003 - sort button is available", priority = 3)
+    @Test(description = "TC_RS_003 - sort button is available", groups = {"ui"}, priority = 3)
     public void sortButtonIsPresent() {
         GoogleSearchPage page = new GoogleSearchPage(driver);
         page.open(config.getGoogleBaseUrl()).search(config.getRestaurantQuery());
@@ -50,7 +50,7 @@ public class RestaurantSearchTest extends BaseTest {
         soft.assertAll();
     }
 
-    @Test(description = "TC_RS_004 - sorting by highest rated does not break the page", priority = 4)
+    @Test(description = "TC_RS_004 - sorting by highest rated does not break the page", groups = {"ui"}, priority = 4)
     public void sortByHighestRatedWorks() {
         GoogleSearchPage page = new GoogleSearchPage(driver);
         page.open(config.getGoogleBaseUrl()).search(config.getRestaurantQuery());
@@ -64,7 +64,7 @@ public class RestaurantSearchTest extends BaseTest {
         soft.assertAll();
     }
 
-    @Test(description = "TC_RS_005 - after highest rated sort, first card rating >= last card rating", priority = 5)
+    @Test(description = "TC_RS_005 - after highest rated sort, first card rating >= last card rating", groups = {"ui"}, priority = 5)
     public void sortedResultsAreInDescendingOrder() {
         GoogleSearchPage page = new GoogleSearchPage(driver);
         page.open(config.getGoogleBaseUrl()).search(config.getRestaurantQuery());
@@ -95,7 +95,7 @@ public class RestaurantSearchTest extends BaseTest {
         soft.assertAll();
     }
 
-    @Test(description = "TC_RS_006 - every visible card has some text", priority = 6)
+    @Test(description = "TC_RS_006 - every visible card has some text", groups = {"ui"}, priority = 6)
     public void allCardsHaveText() {
         GoogleSearchPage page = new GoogleSearchPage(driver);
         page.open(config.getGoogleBaseUrl()).search(config.getRestaurantQuery());

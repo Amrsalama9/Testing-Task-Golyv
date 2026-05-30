@@ -13,7 +13,7 @@
     <name>Trip Planner QA Automation Suite</name>
     <description>
         Selenium + REST Assured automation covering Google Search flight discovery,
-        weather lookup and restaurant search for the Cairo → Marsa Alam scenario.
+        weather lookup and restaurant search for the Cairo to Marsa Alam scenario.
     </description>
 
     <properties>
@@ -28,12 +28,9 @@
         <rest-assured.version>5.4.0</rest-assured.version>
         <webdrivermanager.version>5.8.0</webdrivermanager.version>
         <extentreports.version>5.1.1</extentreports.version>
-        <lombok.version>1.18.32</lombok.version>
         <slf4j.version>2.0.13</slf4j.version>
         <logback.version>1.5.6</logback.version>
-        <jackson.version>2.17.1</jackson.version>
         <assertj.version>3.26.0</assertj.version>
-        <faker.version>1.0.2</faker.version>
     </properties>
 
     <dependencies>
@@ -82,15 +79,6 @@
             <artifactId>extentreports</artifactId>
             <version>${extentreports.version}</version>
         </dependency>
-
-        <!-- ===== LOMBOK ===== -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>${lombok.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
         <!-- ===== LOGGING ===== -->
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -102,29 +90,13 @@
             <artifactId>logback-classic</artifactId>
             <version>${logback.version}</version>
         </dependency>
-
-        <!-- ===== JACKSON ===== -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>${jackson.version}</version>
-        </dependency>
-
         <!-- ===== ASSERTJ ===== -->
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
             <version>${assertj.version}</version>
         </dependency>
-
-        <!-- ===== JAVA FAKER (test data) ===== -->
-        <dependency>
-            <groupId>com.github.javafaker</groupId>
-            <artifactId>javafaker</artifactId>
-            <version>${faker.version}</version>
-        </dependency>
-
-    </dependencies>
+        </dependencies>
 
     <build>
         <plugins>

@@ -8,7 +8,7 @@ import org.testng.annotations.Test;
 
 public class FlightSearchTest extends BaseTest {
 
-    @Test(description = "TC_FL_001 - flights page loads")
+    @Test(description = "TC_FL_001 - flights page loads", groups = {"ui"})
     public void flightsPageLoads() {
         GoogleFlightsPage page = new GoogleFlightsPage(driver);
         page.open(config.getGoogleFlightsUrl());
@@ -22,7 +22,7 @@ public class FlightSearchTest extends BaseTest {
         soft.assertAll();
     }
 
-    @Test(description = "TC_FL_002-004 - search Cairo to Marsa Alam returns results", priority = 2)
+    @Test(description = "TC_FL_002-004 - search Cairo to Marsa Alam returns results", groups = {"ui"}, priority = 2)
     public void searchCairoToMarsaAlamReturnsResults() {
         GoogleFlightsPage page = new GoogleFlightsPage(driver);
         page.open(config.getGoogleFlightsUrl())
@@ -42,7 +42,7 @@ public class FlightSearchTest extends BaseTest {
         soft.assertAll();
     }
 
-    @Test(description = "TC_FL_005 - route label mentions both cities", priority = 3)
+    @Test(description = "TC_FL_005 - route label mentions both cities", groups = {"ui"}, priority = 3)
     public void resultsPageShowsCorrectRoute() {
         GoogleFlightsPage page = new GoogleFlightsPage(driver);
         page.open(config.getGoogleFlightsUrl())
@@ -58,7 +58,7 @@ public class FlightSearchTest extends BaseTest {
         soft.assertAll();
     }
 
-    @Test(description = "TC_FL_006-007 - first result has airline name and price", priority = 4)
+    @Test(description = "TC_FL_006-007 - first result has airline name and price", groups = {"ui"}, priority = 4)
     public void firstResultHasAirlineAndPrice() {
         GoogleFlightsPage page = new GoogleFlightsPage(driver);
         page.open(config.getGoogleFlightsUrl())

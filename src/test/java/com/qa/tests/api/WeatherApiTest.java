@@ -17,7 +17,7 @@ public class WeatherApiTest extends BaseApiTest {
 
     private static final String WEATHER_PATH = "/weather";
 
-    @Test(description = "TC_API_WX_001-008 - weather response for Marsa Alam is correct")
+    @Test(description = "TC_API_WX_001-008 - weather response for Marsa Alam is correct", groups = {"api"})
     public void marsaAlamWeatherIsValid() {
         skipIfNoKey();
 
@@ -67,7 +67,7 @@ public class WeatherApiTest extends BaseApiTest {
         soft.assertAll();
     }
 
-    @Test(description = "TC_API_WX_009 - invalid key returns 401", priority = 2)
+    @Test(description = "TC_API_WX_009 - invalid key returns 401", groups = {"api"}, priority = 2)
     public void invalidKeyReturns401() {
         given().spec(requestSpec)
                .baseUri(config.getOwmBaseUrl())
@@ -79,7 +79,7 @@ public class WeatherApiTest extends BaseApiTest {
                .statusCode(401);
     }
 
-    @Test(description = "TC_API_WX_010 - non-existent city returns 404", priority = 3)
+    @Test(description = "TC_API_WX_010 - non-existent city returns 404", groups = {"api"}, priority = 3)
     public void badCityReturns404() {
         skipIfNoKey();
 

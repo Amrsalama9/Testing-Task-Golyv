@@ -11,6 +11,9 @@ import java.util.Properties;
  * Singleton config loader. Reads config.properties on first use.
  * JVM system properties take precedence over the file, so -Dbrowser=firefox
  * always wins. If a value looks like ${ENV_VAR}, we resolve it from the environment.
+ *
+ * The file to load can be overridden via -Dconfig.file=config-mock.properties
+ * which is used by the api-mock Maven profile.
  */
 public final class ConfigReader {
 
@@ -19,11 +22,13 @@ public final class ConfigReader {
     private final Properties props = new Properties();
 
     private ConfigReader() {
-        try (InputStream in = getClass().getClassLoader().getResourceAsStream("config.properties")) {
-            if (in == null) throw new IllegalStateException("config.properties not found on classpath");
+        String configFile = System.getProperty("config.file", "config.properties");
+        try (InputStream in = getClass().getClassLoader().getResourceAsStream(configFile)) {
+            if (in == null) throw new IllegalStateException(configFile + " not found on classpath");
             props.load(in);
+            log.info("Loaded config from: {}", configFile);
         } catch (IOException e) {
-            throw new IllegalStateException("Failed to load config.properties", e);
+            throw new IllegalStateException("Failed to load " + configFile, e);
         }
     }
 
