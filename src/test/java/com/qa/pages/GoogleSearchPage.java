@@ -10,7 +10,7 @@ import java.util.List;
 
 /**
  * Covers Google Search home page and the SERP.
- * Used for both the weather query and the restaurant query — same search box, different widgets on the results page.
+ * Used for both the weather query and the restaurant query - same search box, different widgets on the results page.
  */
 public class GoogleSearchPage extends BasePage {
 
@@ -101,7 +101,7 @@ public class GoogleSearchPage extends BasePage {
             WaitUtils.waitForClickable(driver, CONSENT_ACCEPT).click();
             log.info("Dismissed cookie consent");
         } catch (Exception e) {
-            // no consent dialog, that's fine
+            // no consent dialog, continuing
         }
     }
 }

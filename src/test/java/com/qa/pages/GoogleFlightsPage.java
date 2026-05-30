@@ -9,8 +9,8 @@ import org.openqa.selenium.WebElement;
 import java.util.List;
 
 /**
- * Google Flights page — handles the search form and result cards.
- * Locators are a bit fragile since Google doesn't expose stable test IDs here,
+ * Google Flights page - handles the search form and result cards.
+ * Locators are a bit fragile since Google does not expose stable test IDs here,
  * so keeping fallbacks where possible.
  */
 public class GoogleFlightsPage extends BasePage {

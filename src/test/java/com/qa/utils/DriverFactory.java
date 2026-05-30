@@ -16,7 +16,7 @@ import java.time.Duration;
 
 /**
  * Creates and manages WebDriver instances per thread.
- * Using ThreadLocal so parallel test classes don't share a browser.
+ * Using ThreadLocal so parallel test classes do not share a browser.
  */
 public final class DriverFactory {
 

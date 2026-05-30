@@ -90,10 +90,10 @@ public class WeatherSearchTest extends BaseTest {
 
         SoftAssertions soft = new SoftAssertions();
         if (raw.isEmpty()) {
-            soft.fail("couldn't extract a numeric temperature from the widget");
+            soft.fail("could not extract a numeric temperature from the widget");
         } else {
             int temp = Integer.parseInt(raw);
-            // Marsa Alam is on the Red Sea coast — below 5 or above 55 would be wrong data
+            // Marsa Alam is on the Red Sea coast - below 5 or above 55 would be wrong data
             soft.assertThat(temp).as("temp should be between 5 and 55 C").isBetween(5, 55);
         }
         soft.assertAll();

@@ -50,7 +50,7 @@ public class RestaurantSearchTest extends BaseTest {
         soft.assertAll();
     }
 
-    @Test(description = "TC_RS_004 - sorting by highest rated doesn't break the page", priority = 4)
+    @Test(description = "TC_RS_004 - sorting by highest rated does not break the page", priority = 4)
     public void sortByHighestRatedWorks() {
         GoogleSearchPage page = new GoogleSearchPage(driver);
         page.open(config.getGoogleBaseUrl()).search(config.getRestaurantQuery());
@@ -73,7 +73,7 @@ public class RestaurantSearchTest extends BaseTest {
         List<WebElement> cards = page.getRestaurantCards();
 
         if (cards.size() < 2) {
-            log.warn("Only {} card(s) — can't verify sort order with a single result", cards.size());
+            log.warn("Only {} card(s) - cannot verify sort order with a single result", cards.size());
             return;
         }
 
@@ -90,7 +90,7 @@ public class RestaurantSearchTest extends BaseTest {
                 .as("first card should have a rating >= last card after sorting by highest rated")
                 .isGreaterThanOrEqualTo(last);
         } catch (NumberFormatException e) {
-            soft.fail("couldn't parse ratings — first='" + firstRaw + "' last='" + lastRaw + "'");
+            soft.fail("could not parse ratings - first=" + firstRaw + " last=" + lastRaw);
         }
         soft.assertAll();
     }

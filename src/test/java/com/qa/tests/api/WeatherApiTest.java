@@ -36,17 +36,17 @@ public class WeatherApiTest extends BaseApiTest {
         soft.assertThat(response.statusCode()).as("expect HTTP 200").isEqualTo(200);
 
         String name = response.jsonPath().getString("name");
-        log.info("City in response: '{}'", name);
+        log.info("City in response: {}", name);
         soft.assertThat(name).as("name should reference Marsa Alam").isNotNull().containsIgnoringCase("Marsa");
 
         Double temp = response.jsonPath().get("main.temp");
         soft.assertThat(temp).as("main.temp should be present").isNotNull();
         if (temp != null) {
-            soft.assertThat(temp).as("temp should be realistic for Marsa Alam (5-55C)").isBetween(5.0, 55.0);
+            soft.assertThat(temp).as("temp should be realistic for Marsa Alam, between 5 and 55 Celsius").isBetween(5.0, 55.0);
         }
 
         String description = response.jsonPath().getString("weather[0].description");
-        log.info("Weather description: '{}'", description);
+        log.info("Weather description: {}", description);
         soft.assertThat(description).as("weather description should not be blank").isNotNull().isNotBlank();
 
         // Marsa Alam is roughly 25.07N, 34.89E
@@ -95,7 +95,7 @@ public class WeatherApiTest extends BaseApiTest {
 
     private void skipIfNoKey() {
         if (config.getOwmApiKey().isEmpty()) {
-            throw new SkipException("OWM_API_KEY not set — skipping. Get a free key at openweathermap.org/api");
+            throw new SkipException("OWM_API_KEY not set - skipping. Get a free key at openweathermap.org/api");
         }
     }
 }

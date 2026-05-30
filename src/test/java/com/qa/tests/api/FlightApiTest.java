@@ -15,7 +15,7 @@ import static org.hamcrest.Matchers.notNullValue;
 
 /**
  * Amadeus flight-offers API tests.
- * Tests skip automatically if AMADEUS_CLIENT_ID / AMADEUS_CLIENT_SECRET are not set.
+ * Tests skip automatically if AMADEUS_CLIENT_ID and AMADEUS_CLIENT_SECRET are not set.
  *
  * Endpoint: GET https://test.api.amadeus.com/v2/shopping/flight-offers
  */
@@ -35,7 +35,7 @@ public class FlightApiTest extends BaseApiTest {
         String clientSecret = config.getAmadeusClientSecret();
 
         if (clientId.isEmpty() || clientSecret.isEmpty()) {
-            log.warn("Amadeus credentials not set — API flight tests will be skipped");
+            log.warn("Amadeus credentials not set - API flight tests will be skipped");
             return;
         }
 
@@ -51,7 +51,7 @@ public class FlightApiTest extends BaseApiTest {
         log.info("Amadeus token obtained");
     }
 
-    @Test(description = "TC_API_FL_001-002 - flight offers endpoint returns 200 for CAI->RMF")
+    @Test(description = "TC_API_FL_001-002 - flight offers endpoint returns 200 for Cairo to Marsa Alam")
     public void flightOffersReturns200() {
         skipIfNoCredentials();
 
@@ -91,20 +91,16 @@ public class FlightApiTest extends BaseApiTest {
         soft.assertThat(data).as("data array should have at least one offer").isNotNull().isNotEmpty();
 
         if (data != null && !data.isEmpty()) {
-            // every offer should have an id
             soft.assertThat(response.jsonPath().<String>getList("data.id"))
                 .as("every offer must have an id").doesNotContainNull();
 
-            // origin IATA
             String origin = response.jsonPath().getString("data[0].itineraries[0].segments[0].departure.iataCode");
             soft.assertThat(origin).as("departure IATA should be CAI").isEqualToIgnoringCase(config.getOriginIata());
 
-            // destination IATA — check last segment arrival
             int segCount = response.jsonPath().<List<?>>get("data[0].itineraries[0].segments").size();
             String dest  = response.jsonPath().getString("data[0].itineraries[0].segments[" + (segCount - 1) + "].arrival.iataCode");
             soft.assertThat(dest).as("final arrival IATA should be RMF").isEqualToIgnoringCase(config.getDestinationIata());
 
-            // price
             String total = response.jsonPath().getString("data[0].price.total");
             soft.assertThat(total).as("price.total should be present").isNotNull().isNotBlank();
             if (total != null) {
@@ -125,7 +121,7 @@ public class FlightApiTest extends BaseApiTest {
 
     private void skipIfNoCredentials() {
         if (accessToken == null) {
-            throw new SkipException("Amadeus credentials not set — skipping. Export AMADEUS_CLIENT_ID and AMADEUS_CLIENT_SECRET to run these.");
+            throw new SkipException("Amadeus credentials not set - skipping. Export AMADEUS_CLIENT_ID and AMADEUS_CLIENT_SECRET to run these.");
         }
     }
 }

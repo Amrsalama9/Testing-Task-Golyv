@@ -41,7 +41,7 @@ public class ExtentReportListener implements ITestListener {
 
     @Override
     public void onTestSkipped(ITestResult result) {
-        ExtentReportManager.getTest().log(Status.SKIP, "SKIP — " + result.getThrowable().getMessage());
+        ExtentReportManager.getTest().log(Status.SKIP, "SKIP - " + result.getThrowable().getMessage());
     }
 
     @Override

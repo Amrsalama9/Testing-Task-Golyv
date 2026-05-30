@@ -6,22 +6,19 @@ import org.testng.SkipException;
 import org.testng.annotations.Test;
 
 import java.util.List;
-import java.util.Map;
 
 import static io.restassured.RestAssured.given;
 
 /**
- * Google Places API (New) tests — text search for restaurants near Marsa Alam.
+ * Google Places API (New) tests - text search for restaurants near Marsa Alam.
  *
- * Google replaced the old GET /maps/api/place/textsearch endpoint with a new
- * POST-based API at places.googleapis.com/v1 in 2023. The old one is now "Legacy"
- * and will eventually be shut down. This suite uses the new endpoint.
+ * Google replaced the old GET endpoint at maps.googleapis.com/maps/api/place with
+ * a new POST-based API at places.googleapis.com/v1 in 2023. This suite uses the new one.
  *
- * New endpoint:  POST https://places.googleapis.com/v1/places:searchText
+ * Text search:  POST https://places.googleapis.com/v1/places:searchText
  * Nearby search: POST https://places.googleapis.com/v1/places:searchNearby
  *
- * Auth: API key goes in the X-Goog-Api-Key header, not a query param.
- * Field mask: X-Goog-FieldMask header tells the API which fields to return.
+ * Auth goes in the X-Goog-Api-Key header. Field mask in X-Goog-FieldMask header.
  *
  * Tests skip if GOOGLE_PLACES_KEY is not set.
  */
@@ -34,23 +31,20 @@ public class RestaurantApiTest extends BaseApiTest {
     public void restaurantSearchResponseIsValid() {
         skipIfNoKey();
 
-        // New Places API uses POST with JSON body and field mask header
-        String body = """
-                {
-                  "textQuery": "restaurant near Marsa Alam",
-                  "includedType": "restaurant",
-                  "languageCode": "en"
-                }
-                """;
+        String body = "{"
+                + "\"textQuery\": \"restaurant near Marsa Alam\","
+                + "\"includedType\": \"restaurant\","
+                + "\"languageCode\": \"en\""
+                + "}";
 
-        String fieldMask = "places.id,places.displayName,places.formattedAddress," +
-                           "places.location,places.rating,places.types,places.businessStatus";
+        String fieldMask = "places.id,places.displayName,places.formattedAddress,"
+                         + "places.location,places.rating,places.types,places.businessStatus";
 
         Response response = given().spec(requestSpec)
                 .baseUri(config.getPlacesBaseUrl())
-                .header("X-Goog-Api-Key",   config.getPlacesApiKey())
-                .header("X-Goog-FieldMask",  fieldMask)
-                .header("Content-Type",      "application/json")
+                .header("X-Goog-Api-Key",  config.getPlacesApiKey())
+                .header("X-Goog-FieldMask", fieldMask)
+                .header("Content-Type",     "application/json")
                 .body(body)
                 .post(TEXT_SEARCH);
 
@@ -59,10 +53,8 @@ public class RestaurantApiTest extends BaseApiTest {
 
         SoftAssertions soft = new SoftAssertions();
 
-        // TC_API_RS_001
         soft.assertThat(response.statusCode()).as("expect HTTP 200").isEqualTo(200);
 
-        // TC_API_RS_003
         List<Object> places = response.jsonPath().getList("places");
         soft.assertThat(places).as("places array should not be empty").isNotNull().isNotEmpty();
 
@@ -71,36 +63,30 @@ public class RestaurantApiTest extends BaseApiTest {
             log.info("Restaurant results: {}", count);
 
             for (int i = 0; i < count; i++) {
-                // TC_API_RS_004 – display name
                 String name = response.jsonPath().getString("places[" + i + "].displayName.text");
                 soft.assertThat(name)
                     .as("places[" + i + "].displayName.text should not be blank")
                     .isNotNull().isNotBlank();
 
-                // TC_API_RS_005 – coordinates present
                 Double lat = response.jsonPath().get("places[" + i + "].location.latitude");
                 Double lng = response.jsonPath().get("places[" + i + "].location.longitude");
                 soft.assertThat(lat).as("places[" + i + "] latitude should exist").isNotNull();
                 soft.assertThat(lng).as("places[" + i + "] longitude should exist").isNotNull();
 
-                // TC_API_RS_006 – coordinates in Marsa Alam region
                 if (lat != null && lng != null) {
-                    soft.assertThat(lat).as("lat should be in Marsa Alam region (~23-27N)").isBetween(23.0, 27.0);
-                    soft.assertThat(lng).as("lng should be in Marsa Alam region (~33-37E)").isBetween(33.0, 37.0);
+                    soft.assertThat(lat).as("lat should be in Marsa Alam region").isBetween(23.0, 27.0);
+                    soft.assertThat(lng).as("lng should be in Marsa Alam region").isBetween(33.0, 37.0);
                 }
 
-                // TC_API_RS_007 – place id
                 String placeId = response.jsonPath().getString("places[" + i + "].id");
                 soft.assertThat(placeId).as("places[" + i + "].id should be present").isNotNull().isNotBlank();
 
-                // TC_API_RS_008 – rating range when present
                 Object ratingObj = response.jsonPath().get("places[" + i + "].rating");
                 if (ratingObj != null) {
                     double rating = ((Number) ratingObj).doubleValue();
-                    soft.assertThat(rating).as("rating should be 1.0-5.0").isBetween(1.0, 5.0);
+                    soft.assertThat(rating).as("rating should be between 1.0 and 5.0").isBetween(1.0, 5.0);
                 }
 
-                // TC_API_RS_012 – types include something food-related
                 List<String> types = response.jsonPath().getList("places[" + i + "].types");
                 if (types != null) {
                     boolean isFood = types.stream().anyMatch(t ->
@@ -113,7 +99,6 @@ public class RestaurantApiTest extends BaseApiTest {
             }
         }
 
-        // TC_API_RS_010
         soft.assertThat(ms).as("response should come back under 4 seconds").isLessThan(4000L);
 
         soft.assertAll();
@@ -124,22 +109,17 @@ public class RestaurantApiTest extends BaseApiTest {
         skipIfNoKey();
 
         // Marsa Alam coordinates: 25.0671N, 34.8923E
-        String body = """
-                {
-                  "includedTypes": ["restaurant"],
-                  "maxResultCount": 10,
-                  "locationRestriction": {
-                    "circle": {
-                      "center": {
-                        "latitude": 25.0671,
-                        "longitude": 34.8923
-                      },
-                      "radius": 10000.0
-                    }
-                  },
-                  "rankPreference": "POPULARITY"
-                }
-                """;
+        String body = "{"
+                + "\"includedTypes\": [\"restaurant\"],"
+                + "\"maxResultCount\": 10,"
+                + "\"locationRestriction\": {"
+                + "  \"circle\": {"
+                + "    \"center\": {\"latitude\": 25.0671, \"longitude\": 34.8923},"
+                + "    \"radius\": 10000.0"
+                + "  }"
+                + "},"
+                + "\"rankPreference\": \"POPULARITY\""
+                + "}";
 
         Response response = given().spec(requestSpec)
                 .baseUri(config.getPlacesBaseUrl())
@@ -168,11 +148,7 @@ public class RestaurantApiTest extends BaseApiTest {
 
     @Test(description = "TC_API_RS_011 - invalid API key returns 403", priority = 3)
     public void invalidKeyReturns403() {
-        String body = """
-                {
-                  "textQuery": "restaurant near Marsa Alam"
-                }
-                """;
+        String body = "{\"textQuery\": \"restaurant near Marsa Alam\"}";
 
         Response response = given().spec(requestSpec)
                 .baseUri(config.getPlacesBaseUrl())
@@ -184,7 +160,6 @@ public class RestaurantApiTest extends BaseApiTest {
 
         log.info("Status with bad key: {}", response.statusCode());
 
-        // New Places API returns 403 for invalid/unauthorized keys
         SoftAssertions soft = new SoftAssertions();
         soft.assertThat(response.statusCode())
             .as("should return 403 with an invalid API key")
@@ -194,7 +169,7 @@ public class RestaurantApiTest extends BaseApiTest {
 
     private void skipIfNoKey() {
         if (config.getPlacesApiKey().isEmpty()) {
-            throw new SkipException("GOOGLE_PLACES_KEY not set — skipping. Enable Places API in GCP and export the key.");
+            throw new SkipException("GOOGLE_PLACES_KEY not set - skipping. Enable Places API in GCP and export the key.");
         }
     }
 

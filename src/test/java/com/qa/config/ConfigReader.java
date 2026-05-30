@@ -37,7 +37,7 @@ public final class ConfigReader {
             String envKey = value.substring(2, value.length() - 1);
             String envVal = System.getenv(envKey);
             if (envVal == null) {
-                log.warn("Env var '{}' not set (needed for config key '{}')", envKey, key);
+                log.warn("Env var {} not set, needed for config key {}", envKey, key);
                 return "";
             }
             return envVal;

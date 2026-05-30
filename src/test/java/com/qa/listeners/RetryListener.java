@@ -9,7 +9,7 @@ import java.lang.reflect.Method;
 
 /**
  * Automatically attaches {@link RetryAnalyzer} to every test method
- * so we don't have to annotate each one individually.
+ * so we do not have to annotate each one individually.
  */
 public class RetryListener implements IAnnotationTransformer {
 

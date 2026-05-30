@@ -19,7 +19,7 @@ public class RetryAnalyzer implements IRetryAnalyzer {
     public boolean retry(ITestResult result) {
         if (retryCount < MAX_RETRY) {
             retryCount++;
-            log.warn("Retrying test '{}' – attempt {}/{}", result.getName(), retryCount, MAX_RETRY);
+            log.warn("Retrying test {} - attempt {} of {}", result.getName(), retryCount, MAX_RETRY);
             return true;
         }
         return false;

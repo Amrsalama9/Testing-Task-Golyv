@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Common low-level interactions shared across all page objects.
- * Nothing test-specific lives here — just the building blocks that every page needs.
+ * Nothing test-specific lives here - just the building blocks that every page needs.
  */
 public abstract class BasePage {
 

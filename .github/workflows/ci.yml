@@ -1,4 +1,4 @@
-name: Trip Planner QA – CI Pipeline
+name: Trip Planner QA
 
 on:
   push:
@@ -8,11 +8,11 @@ on:
   workflow_dispatch:
     inputs:
       browser:
-        description: "Browser to run UI tests (chrome | firefox)"
+        description: "Browser to run UI tests (chrome or firefox)"
         required: false
         default: "chrome"
       run_api_tests:
-        description: "Run API tests (true | false)"
+        description: "Run API tests (true or false)"
         required: false
         default: "true"
 
@@ -22,9 +22,8 @@ env:
 
 jobs:
 
-  # ── Job 1: Static analysis & compilation check ──────────────────────────
   build:
-    name: Compile & Validate
+    name: Compile and Validate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -39,9 +38,8 @@ jobs:
       - name: Compile project
         run: mvn compile test-compile -q
 
-  # ── Job 2: UI Tests ─────────────────────────────────────────────────────
   ui-tests:
-    name: UI Tests (${{ github.event.inputs.browser || 'chrome' }})
+    name: UI Tests
     needs: build
     runs-on: ubuntu-latest
 
@@ -85,9 +83,8 @@ jobs:
           name: failure-screenshots
           path: test-output/screenshots/
 
-  # ── Job 3: API Tests ─────────────────────────────────────────────────────
   api-tests:
-    name: API Contract Tests
+    name: API Tests
     needs: build
     runs-on: ubuntu-latest
     if: ${{ github.event.inputs.run_api_tests != 'false' }}
@@ -109,10 +106,10 @@ jobs:
             -Dgroups=api \
             -q
         env:
-          OWM_API_KEY:            ${{ secrets.OWM_API_KEY }}
-          GOOGLE_PLACES_KEY:      ${{ secrets.GOOGLE_PLACES_KEY }}
-          AMADEUS_CLIENT_ID:      ${{ secrets.AMADEUS_CLIENT_ID }}
-          AMADEUS_CLIENT_SECRET:  ${{ secrets.AMADEUS_CLIENT_SECRET }}
+          OWM_API_KEY:           ${{ secrets.OWM_API_KEY }}
+          GOOGLE_PLACES_KEY:     ${{ secrets.GOOGLE_PLACES_KEY }}
+          AMADEUS_CLIENT_ID:     ${{ secrets.AMADEUS_CLIENT_ID }}
+          AMADEUS_CLIENT_SECRET: ${{ secrets.AMADEUS_CLIENT_SECRET }}
 
       - name: Upload API test report
         if: always()

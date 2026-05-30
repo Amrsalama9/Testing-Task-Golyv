@@ -36,7 +36,7 @@ public final class ExtentReportManager {
             ExtentSparkReporter spark = new ExtentSparkReporter(reportPath);
             spark.config().setTheme(Theme.DARK);
             spark.config().setDocumentTitle(config.getReportTitle());
-            spark.config().setReportName("Trip Planner – QA Automation");
+            spark.config().setReportName("Trip Planner - QA Automation");
             spark.config().setTimeStampFormat("dd-MM-yyyy HH:mm:ss");
 
             extentReports = new ExtentReports();

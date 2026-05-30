@@ -2,8 +2,8 @@
 Local mock API servers for the Trip Planner QA suite.
 
 Simulates 3 external APIs on localhost so the API tests run without
-needing real credentials. Each server replicates the real API's response
-structure exactly — same field names, same HTTP status codes, same error behavior.
+needing real credentials. Each server replicates the real API response
+structure exactly - same field names, same HTTP status codes, same error behavior.
 
 Ports:
   9081 - OpenWeatherMap  /data/2.5/weather
@@ -28,7 +28,7 @@ PLACES_PORT  = 9082
 AMADEUS_PORT = 9083
 
 
-# ── Mock response payloads ────────────────────────────────────────────────────
+# Mock response payloads
 # These match the real API response structures field for field.
 
 OWM_WEATHER_MARSA_ALAM = {
@@ -248,7 +248,7 @@ AMADEUS_FLIGHT_OFFERS = {
 }
 
 
-# ── Request handlers ──────────────────────────────────────────────────────────
+# Request handlers
 
 def send_json(handler, status, body):
     data = json.dumps(body).encode()
@@ -262,9 +262,9 @@ def send_json(handler, status, body):
 class OWMHandler(BaseHTTPRequestHandler):
     """
     Simulates OpenWeatherMap /data/2.5/weather.
-    - Valid appid + any city name  → 200 with Marsa Alam weather data
-    - appid contains 'invalid' or is empty  → 401
-    - city name contains 'xxxx' or 'not_a'  → 404
+    - Valid appid + any city name: returns 200 with Marsa Alam weather data
+    - appid contains invalid or is empty: returns 401
+    - city name contains xxxx or not_a: returns 404
     """
     def do_GET(self):
         params = parse_qs(urlparse(self.path).query)
@@ -285,8 +285,8 @@ class OWMHandler(BaseHTTPRequestHandler):
 class PlacesHandler(BaseHTTPRequestHandler):
     """
     Simulates Google Places API v1.
-    - Valid X-Goog-Api-Key  → 200 with restaurant results
-    - Key contains 'invalid' or is empty  → 403
+    - Valid X-Goog-Api-Key: returns 200 with restaurant results
+    - Key contains invalid or is empty: returns 403
     Handles both /places:searchText and /places:searchNearby.
     """
     def do_POST(self):
@@ -306,8 +306,8 @@ class PlacesHandler(BaseHTTPRequestHandler):
 class AmadeusHandler(BaseHTTPRequestHandler):
     """
     Simulates Amadeus test API.
-    POST /v1/security/oauth2/token  → returns access token if client_id+secret present
-    GET  /v2/shopping/flight-offers → returns CAI→RMF offers if valid Bearer token
+    POST /v1/security/oauth2/token - returns access token if client_id and secret are present
+    GET /v2/shopping/flight-offers - returns CAI to RMF offers if valid Bearer token
     """
     def do_POST(self):
         length = int(self.headers.get("Content-Length", 0))
@@ -332,7 +332,7 @@ class AmadeusHandler(BaseHTTPRequestHandler):
         print(f"[Amadeus:{AMADEUS_PORT}] {fmt % args}")
 
 
-# ── Startup ───────────────────────────────────────────────────────────────────
+# Startup
 
 if __name__ == "__main__":
     configs = [
