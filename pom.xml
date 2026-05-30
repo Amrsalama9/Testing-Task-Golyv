@@ -158,4 +158,26 @@
         </plugins>
     </build>
 
+
+    <profiles>
+        <profile>
+            <id>api-mock</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <config.file>config-mock.properties</config.file>
+                                <browser>chrome</browser>
+                                <headless>true</headless>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>
