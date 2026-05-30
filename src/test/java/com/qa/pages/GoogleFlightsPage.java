@@ -9,57 +9,40 @@ import org.openqa.selenium.WebElement;
 import java.util.List;
 
 /**
- * Page Object for Google Flights (google.com/travel/flights).
- * Covers the origin/destination inputs, the search trigger, and the
- * basic assertions on results (airline names, price tiles, route label).
+ * Google Flights page — handles the search form and result cards.
+ * Locators are a bit fragile since Google doesn't expose stable test IDs here,
+ * so keeping fallbacks where possible.
  */
 public class GoogleFlightsPage extends BasePage {
 
-    // ── Locators ──────────────────────────────────────────────────────
-
-    // Origin / destination inputs
-    private static final By ORIGIN_INPUT       = By.cssSelector("[placeholder='Where from?'], [aria-label='Where from?']");
-    private static final By DESTINATION_INPUT  = By.cssSelector("[placeholder='Where to?'], [aria-label='Where to?']");
-
-    // Autocomplete suggestion list
+    private static final By ORIGIN_INPUT        = By.cssSelector("[placeholder='Where from?'], [aria-label='Where from?']");
+    private static final By DESTINATION_INPUT   = By.cssSelector("[placeholder='Where to?'], [aria-label='Where to?']");
     private static final By AUTOCOMPLETE_OPTION = By.cssSelector("[data-value], li[role='option']");
+    private static final By SEARCH_BUTTON       = By.cssSelector("button[aria-label*='Search'], button.gws-flights__search-button");
 
-    // Search button
-    private static final By SEARCH_BUTTON      = By.cssSelector("button[aria-label*='Search'], button.gws-flights__search-button");
-
-    // Results
     private static final By FLIGHT_RESULT_CARDS = By.cssSelector("li[class*='pIav2d'], [jsname='IWWDBc'] li");
     private static final By RESULT_AIRLINE_NAME  = By.cssSelector("[class*='Ir0Voe'] .sSHqwe, div[class*='h1fkLb']");
     private static final By RESULT_PRICE         = By.cssSelector("[class*='FpEdX'] span, [data-gs*='price']");
-    private static final By RESULT_DURATION      = By.cssSelector("[class*='gvkrdb'], [class*='AdWynf']");
     private static final By NO_RESULTS_MSG       = By.cssSelector("[class*='no-flights'], [data-gs='no_results']");
-
-    // Route breadcrumb visible on results page header
     private static final By ROUTE_LABEL          = By.cssSelector("[class*='JMnxgf'], h1[class*='flights']");
 
-    // Consent / cookie banner (same as search page)
-    private static final By CONSENT_ACCEPT       = By.cssSelector("button[id='L2AGLb'], div[id='introAgreeButton']");
+    private static final By CONSENT_ACCEPT = By.cssSelector("button[id='L2AGLb'], div[id='introAgreeButton']");
 
     public GoogleFlightsPage(WebDriver driver) {
         super(driver);
     }
 
-    // ── Actions ───────────────────────────────────────────────────────
-
     public GoogleFlightsPage open(String url) {
         navigateTo(url);
-        acceptConsentIfPresent();
+        dismissConsentIfNeeded();
         return this;
     }
 
-    /**
-     * Fills in origin, destination and clicks Search.
-     */
     public GoogleFlightsPage searchFlights(String origin, String destination) {
-        log.info("Searching flights: {} → {}", origin, destination);
-        enterOrigin(origin);
-        enterDestination(destination);
-        clickSearch();
+        log.info("Searching flights {} -> {}", origin, destination);
+        fillOrigin(origin);
+        fillDestination(destination);
+        submitSearch();
         return this;
     }
 
@@ -69,8 +52,7 @@ public class GoogleFlightsPage extends BasePage {
 
     public boolean hasResults() {
         try {
-            List<WebElement> cards = getFlightResultCards();
-            return !cards.isEmpty();
+            return !getFlightResultCards().isEmpty();
         } catch (Exception e) {
             return false;
         }
@@ -81,23 +63,19 @@ public class GoogleFlightsPage extends BasePage {
     }
 
     public String getAirlineForResult(int index) {
-        List<WebElement> cards = getFlightResultCards();
-        return cards.get(index)
-                    .findElements(RESULT_AIRLINE_NAME)
-                    .stream()
-                    .findFirst()
-                    .map(WebElement::getText)
-                    .orElse("Unknown");
+        return getFlightResultCards().get(index)
+                .findElements(RESULT_AIRLINE_NAME)
+                .stream().findFirst()
+                .map(WebElement::getText)
+                .orElse("");
     }
 
     public String getPriceForResult(int index) {
-        List<WebElement> cards = getFlightResultCards();
-        return cards.get(index)
-                    .findElements(RESULT_PRICE)
-                    .stream()
-                    .findFirst()
-                    .map(WebElement::getText)
-                    .orElse("N/A");
+        return getFlightResultCards().get(index)
+                .findElements(RESULT_PRICE)
+                .stream().findFirst()
+                .map(WebElement::getText)
+                .orElse("N/A");
     }
 
     public String getRouteLabelText() {
@@ -116,40 +94,36 @@ public class GoogleFlightsPage extends BasePage {
         }
     }
 
-    // ── Private helpers ───────────────────────────────────────────────
-
-    private void enterOrigin(String city) {
-        WebElement originEl = WaitUtils.waitForClickable(driver, ORIGIN_INPUT);
-        originEl.click();
-        originEl.clear();
-        originEl.sendKeys(city);
-        selectFirstSuggestion();
+    private void fillOrigin(String city) {
+        WebElement el = WaitUtils.waitForClickable(driver, ORIGIN_INPUT);
+        el.click();
+        el.clear();
+        el.sendKeys(city);
+        pickFirstSuggestion();
     }
 
-    private void enterDestination(String city) {
-        WebElement destEl = WaitUtils.waitForClickable(driver, DESTINATION_INPUT);
-        destEl.click();
-        destEl.clear();
-        destEl.sendKeys(city);
-        selectFirstSuggestion();
+    private void fillDestination(String city) {
+        WebElement el = WaitUtils.waitForClickable(driver, DESTINATION_INPUT);
+        el.click();
+        el.clear();
+        el.sendKeys(city);
+        pickFirstSuggestion();
     }
 
-    private void selectFirstSuggestion() {
+    private void pickFirstSuggestion() {
         try {
-            WebElement suggestion = WaitUtils.waitForClickable(driver, AUTOCOMPLETE_OPTION);
-            suggestion.click();
+            WaitUtils.waitForClickable(driver, AUTOCOMPLETE_OPTION).click();
         } catch (Exception e) {
-            // If no dropdown, press Enter to confirm
             driver.findElement(DESTINATION_INPUT).sendKeys(Keys.ENTER);
         }
     }
 
-    private void clickSearch() {
+    private void submitSearch() {
         WaitUtils.waitForClickable(driver, SEARCH_BUTTON).click();
         WaitUtils.waitForUrlContains(driver, "flights");
     }
 
-    private void acceptConsentIfPresent() {
+    private void dismissConsentIfNeeded() {
         try {
             WaitUtils.waitForClickable(driver, CONSENT_ACCEPT).click();
         } catch (Exception ignored) {}

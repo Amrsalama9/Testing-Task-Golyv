@@ -2,17 +2,13 @@ package com.qa.listeners;
 
 import com.aventstack.extentreports.ExtentTest;
 import com.aventstack.extentreports.Status;
+import com.qa.utils.DriverFactory;
 import com.qa.utils.ExtentReportManager;
 import com.qa.utils.ScreenshotUtils;
-import com.qa.utils.DriverFactory;
 import org.testng.ITestContext;
 import org.testng.ITestListener;
 import org.testng.ITestResult;
 
-/**
- * Hooks into TestNG lifecycle to create Extent report nodes and log
- * pass / fail / skip statuses automatically for every test method.
- */
 public class ExtentReportListener implements ITestListener {
 
     @Override
@@ -24,38 +20,28 @@ public class ExtentReportListener implements ITestListener {
     public void onTestStart(ITestResult result) {
         String name = result.getMethod().getMethodName();
         String desc = result.getMethod().getDescription();
-        ExtentTest test = ExtentReportManager.getInstance()
-                .createTest(name, desc != null ? desc : "");
+        ExtentTest test = ExtentReportManager.getInstance().createTest(name, desc != null ? desc : "");
         ExtentReportManager.setTest(test);
-        test.info("Starting test: " + name);
     }
 
     @Override
     public void onTestSuccess(ITestResult result) {
-        ExtentReportManager.getTest().log(Status.PASS, "Test PASSED");
+        ExtentReportManager.getTest().log(Status.PASS, "PASS");
     }
 
     @Override
     public void onTestFailure(ITestResult result) {
         ExtentTest test = ExtentReportManager.getTest();
         test.log(Status.FAIL, result.getThrowable());
-
-        // Attach screenshot if driver is available
         try {
-            String path = ScreenshotUtils.capture(
-                    DriverFactory.getDriver(), result.getMethod().getMethodName());
-            if (!path.isEmpty()) {
-                test.addScreenCaptureFromPath(path, "Failure Screenshot");
-            }
-        } catch (Exception ignored) {
-            // driver might already be closed
-        }
+            String path = ScreenshotUtils.capture(DriverFactory.getDriver(), result.getMethod().getMethodName());
+            if (!path.isEmpty()) test.addScreenCaptureFromPath(path, "Screenshot");
+        } catch (Exception ignored) {}
     }
 
     @Override
     public void onTestSkipped(ITestResult result) {
-        ExtentReportManager.getTest().log(Status.SKIP,
-                "Test SKIPPED – " + result.getThrowable());
+        ExtentReportManager.getTest().log(Status.SKIP, "SKIP — " + result.getThrowable().getMessage());
     }
 
     @Override

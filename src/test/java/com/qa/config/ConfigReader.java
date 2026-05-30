@@ -8,9 +8,9 @@ import java.io.InputStream;
 import java.util.Properties;
 
 /**
- * Loads config.properties once and exposes typed accessors.
- * System properties / environment variables override file values so that
- * CI pipelines can inject secrets without touching committed config.
+ * Singleton config loader. Reads config.properties on first use.
+ * JVM system properties take precedence over the file, so -Dbrowser=firefox
+ * always wins. If a value looks like ${ENV_VAR}, we resolve it from the environment.
  */
 public final class ConfigReader {
 
@@ -19,13 +19,9 @@ public final class ConfigReader {
     private final Properties props = new Properties();
 
     private ConfigReader() {
-        try (InputStream in = getClass().getClassLoader()
-                .getResourceAsStream("config.properties")) {
-            if (in == null) {
-                throw new IllegalStateException("config.properties not found on classpath");
-            }
+        try (InputStream in = getClass().getClassLoader().getResourceAsStream("config.properties")) {
+            if (in == null) throw new IllegalStateException("config.properties not found on classpath");
             props.load(in);
-            log.info("config.properties loaded successfully");
         } catch (IOException e) {
             throw new IllegalStateException("Failed to load config.properties", e);
         }
@@ -35,56 +31,45 @@ public final class ConfigReader {
         return INSTANCE;
     }
 
-    /**
-     * Returns the value for key, preferring a JVM system property over the
-     * file value.  If the resulting string starts with "${" it means an env
-     * var placeholder; we try to resolve it from the environment.
-     */
     public String get(String key) {
         String value = System.getProperty(key, props.getProperty(key, ""));
         if (value.startsWith("${") && value.endsWith("}")) {
             String envKey = value.substring(2, value.length() - 1);
-            value = System.getenv(envKey);
-            if (value == null) {
-                log.warn("Environment variable '{}' is not set; key '{}' will be empty", envKey, key);
+            String envVal = System.getenv(envKey);
+            if (envVal == null) {
+                log.warn("Env var '{}' not set (needed for config key '{}')", envKey, key);
                 return "";
             }
+            return envVal;
         }
         return value;
     }
 
-    public int getInt(String key) {
-        return Integer.parseInt(get(key));
-    }
+    public int getInt(String key)         { return Integer.parseInt(get(key)); }
+    public boolean getBoolean(String key) { return Boolean.parseBoolean(get(key)); }
 
-    public boolean getBoolean(String key) {
-        return Boolean.parseBoolean(get(key));
-    }
-
-    // ── Convenience accessors ────────────────────────────────────────
-
-    public String getBrowser()           { return get("browser"); }
-    public boolean isHeadless()          { return getBoolean("headless"); }
-    public String getGoogleBaseUrl()     { return get("google.base.url"); }
-    public String getGoogleFlightsUrl()  { return get("google.flights.url"); }
-    public String getOriginCity()        { return get("origin.city"); }
-    public String getOriginIata()        { return get("origin.iata"); }
-    public String getDestinationCity()   { return get("destination.city"); }
-    public String getDestinationIata()   { return get("destination.iata"); }
-    public String getWeatherQuery()      { return get("weather.query"); }
-    public String getRestaurantQuery()   { return get("restaurant.query"); }
-    public int getImplicitWait()         { return getInt("implicit.wait"); }
-    public int getExplicitWait()         { return getInt("explicit.wait"); }
-    public int getPageLoadTimeout()      { return getInt("page.load.timeout"); }
-    public boolean isScreenshotOnFail()  { return getBoolean("screenshot.on.failure"); }
-    public String getScreenshotDir()     { return get("screenshot.dir"); }
-    public String getReportDir()         { return get("report.dir"); }
-    public String getReportTitle()       { return get("report.title"); }
-    public String getOwmBaseUrl()        { return get("owm.base.url"); }
-    public String getOwmApiKey()         { return get("owm.api.key"); }
-    public String getPlacesBaseUrl()     { return get("places.base.url"); }
-    public String getPlacesApiKey()      { return get("places.api.key"); }
-    public String getAmadeusBaseUrl()    { return get("amadeus.base.url"); }
-    public String getAmadeusClientId()   { return get("amadeus.client.id"); }
+    public String getBrowser()            { return get("browser"); }
+    public boolean isHeadless()           { return getBoolean("headless"); }
+    public String getGoogleBaseUrl()      { return get("google.base.url"); }
+    public String getGoogleFlightsUrl()   { return get("google.flights.url"); }
+    public String getOriginCity()         { return get("origin.city"); }
+    public String getOriginIata()         { return get("origin.iata"); }
+    public String getDestinationCity()    { return get("destination.city"); }
+    public String getDestinationIata()    { return get("destination.iata"); }
+    public String getWeatherQuery()       { return get("weather.query"); }
+    public String getRestaurantQuery()    { return get("restaurant.query"); }
+    public int getImplicitWait()          { return getInt("implicit.wait"); }
+    public int getExplicitWait()          { return getInt("explicit.wait"); }
+    public int getPageLoadTimeout()       { return getInt("page.load.timeout"); }
+    public boolean isScreenshotOnFail()   { return getBoolean("screenshot.on.failure"); }
+    public String getScreenshotDir()      { return get("screenshot.dir"); }
+    public String getReportDir()          { return get("report.dir"); }
+    public String getReportTitle()        { return get("report.title"); }
+    public String getOwmBaseUrl()         { return get("owm.base.url"); }
+    public String getOwmApiKey()          { return get("owm.api.key"); }
+    public String getPlacesBaseUrl()      { return get("places.base.url"); }
+    public String getPlacesApiKey()       { return get("places.api.key"); }
+    public String getAmadeusBaseUrl()     { return get("amadeus.base.url"); }
+    public String getAmadeusClientId()    { return get("amadeus.client.id"); }
     public String getAmadeusClientSecret(){ return get("amadeus.client.secret"); }
 }

@@ -15,8 +15,8 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 
 /**
- * Thread-local WebDriver factory.
- * Each test thread gets its own isolated driver instance; no static shared state.
+ * Creates and manages WebDriver instances per thread.
+ * Using ThreadLocal so parallel test classes don't share a browser.
  */
 public final class DriverFactory {
 
@@ -38,16 +38,13 @@ public final class DriverFactory {
         if (driver != null) {
             driver.quit();
             driverHolder.remove();
-            log.info("WebDriver quit and removed from thread-local");
         }
     }
 
-    // ── private ────────────────────────────────────────────────────
-
     private static WebDriver createDriver() {
-        String browser = config.getBrowser().toLowerCase().trim();
+        String browser  = config.getBrowser().toLowerCase().trim();
         boolean headless = config.isHeadless();
-        log.info("Initialising {} driver – headless={}", browser, headless);
+        log.info("Starting {} (headless={})", browser, headless);
 
         WebDriver driver = switch (browser) {
             case "firefox" -> buildFirefox(headless);
@@ -72,8 +69,7 @@ public final class DriverFactory {
         opts.addArguments("--disable-notifications");
         opts.setExperimentalOption("excludeSwitches", new String[]{"enable-automation"});
         if (headless) {
-            opts.addArguments("--headless=new");
-            opts.addArguments("--window-size=1920,1080");
+            opts.addArguments("--headless=new", "--window-size=1920,1080");
         }
         return new ChromeDriver(opts);
     }
@@ -91,10 +87,7 @@ public final class DriverFactory {
         EdgeOptions opts = new EdgeOptions();
         opts.addArguments("--disable-blink-features=AutomationControlled");
         opts.addArguments("--lang=en-US");
-        if (headless) {
-            opts.addArguments("--headless=new");
-            opts.addArguments("--window-size=1920,1080");
-        }
+        if (headless) opts.addArguments("--headless=new", "--window-size=1920,1080");
         return new EdgeDriver(opts);
     }
 }

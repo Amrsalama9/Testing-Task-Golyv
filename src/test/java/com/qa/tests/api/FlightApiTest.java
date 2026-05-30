@@ -2,6 +2,7 @@ package com.qa.tests.api;
 
 import io.restassured.response.Response;
 import org.assertj.core.api.SoftAssertions;
+import org.testng.SkipException;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -10,34 +11,20 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.notNullValue;
 
 /**
- * ─────────────────────────────────────────────────────────────────────────────
- * API Test Suite: Amadeus Flight Offers API
- * Endpoint: GET /v2/shopping/flight-offers
- * ─────────────────────────────────────────────────────────────────────────────
+ * Amadeus flight-offers API tests.
+ * Tests skip automatically if AMADEUS_CLIENT_ID / AMADEUS_CLIENT_SECRET are not set.
  *
- * Test Cases:
- *   TC_API_FL_001  Auth token is obtained successfully (HTTP 200)
- *   TC_API_FL_002  Flight-offers response HTTP 200 for CAI→RMF
- *   TC_API_FL_003  Response contains 'data' array with at least one offer
- *   TC_API_FL_004  Each offer has an 'id' field
- *   TC_API_FL_005  Origin IATA code in itinerary matches 'CAI'
- *   TC_API_FL_006  Destination IATA code in itinerary matches 'RMF'
- *   TC_API_FL_007  Each offer has a 'price' object with 'total' field
- *   TC_API_FL_008  'total' price values are numeric strings
- *   TC_API_FL_009  Response time is under 5000 ms
- *   TC_API_FL_010  Response body includes 'dictionaries' meta section
+ * Endpoint: GET https://test.api.amadeus.com/v2/shopping/flight-offers
  */
 public class FlightApiTest extends BaseApiTest {
 
-    private static final String TOKEN_URL  = "https://test.api.amadeus.com/v1/security/oauth2/token";
+    private static final String TOKEN_URL   = "https://test.api.amadeus.com/v1/security/oauth2/token";
     private static final String OFFERS_PATH = "/shopping/flight-offers";
 
     private String accessToken;
-
-    // ── TC_API_FL_001 ──────────────────────────────────────────────────────
 
     @BeforeClass
     @Override
@@ -48,143 +35,97 @@ public class FlightApiTest extends BaseApiTest {
         String clientSecret = config.getAmadeusClientSecret();
 
         if (clientId.isEmpty() || clientSecret.isEmpty()) {
-            log.warn("Amadeus credentials not configured – API tests will be skipped");
-            accessToken = null;
+            log.warn("Amadeus credentials not set — API flight tests will be skipped");
             return;
         }
 
-        Response tokenResponse = given()
+        Response tokenResp = given()
                 .contentType("application/x-www-form-urlencoded")
-                .formParam("grant_type", "client_credentials")
-                .formParam("client_id", clientId)
+                .formParam("grant_type",    "client_credentials")
+                .formParam("client_id",     clientId)
                 .formParam("client_secret", clientSecret)
                 .post(TOKEN_URL);
 
-        tokenResponse.then()
-                .statusCode(200)
-                .body("access_token", notNullValue());
-
-        accessToken = tokenResponse.jsonPath().getString("access_token");
-        log.info("TC_API_FL_001 PASS – Amadeus auth token obtained");
+        tokenResp.then().statusCode(200).body("access_token", notNullValue());
+        accessToken = tokenResp.jsonPath().getString("access_token");
+        log.info("Amadeus token obtained");
     }
 
-    // ── TC_API_FL_002 ──────────────────────────────────────────────────────
-
-    @Test(description = "TC_API_FL_002 – Flight offers endpoint returns HTTP 200",
-          priority = 1)
+    @Test(description = "TC_API_FL_001-002 - flight offers endpoint returns 200 for CAI->RMF")
     public void flightOffersReturns200() {
-        assumeCredentials();
-
-        String departureDate = LocalDate.now().plusDays(30)
-                .format(DateTimeFormatter.ISO_LOCAL_DATE);
+        skipIfNoCredentials();
 
         given().spec(requestSpec)
                .baseUri(config.getAmadeusBaseUrl())
                .header("Authorization", "Bearer " + accessToken)
                .queryParam("originLocationCode",      config.getOriginIata())
                .queryParam("destinationLocationCode", config.getDestinationIata())
-               .queryParam("departureDate",           departureDate)
-               .queryParam("adults",                  1)
-               .queryParam("max",                     5)
+               .queryParam("departureDate",           departureDateIn30Days())
+               .queryParam("adults", 1)
+               .queryParam("max",    5)
                .get(OFFERS_PATH)
                .then()
                .statusCode(200);
-
-        log.info("TC_API_FL_002 PASS");
     }
 
-    // ── TC_API_FL_003 – TC_API_FL_010 ─────────────────────────────────────
-
-    @Test(description = "TC_API_FL_003-010 – Flight offers payload is valid and well-formed",
-          priority = 2)
+    @Test(description = "TC_API_FL_003-010 - flight offers payload is correct", priority = 2)
     public void flightOffersPayloadIsValid() {
-        assumeCredentials();
-
-        String departureDate = LocalDate.now().plusDays(30)
-                .format(DateTimeFormatter.ISO_LOCAL_DATE);
+        skipIfNoCredentials();
 
         Response response = given().spec(requestSpec)
                 .baseUri(config.getAmadeusBaseUrl())
                 .header("Authorization", "Bearer " + accessToken)
                 .queryParam("originLocationCode",      config.getOriginIata())
                 .queryParam("destinationLocationCode", config.getDestinationIata())
-                .queryParam("departureDate",           departureDate)
-                .queryParam("adults",                  1)
-                .queryParam("max",                     5)
+                .queryParam("departureDate",           departureDateIn30Days())
+                .queryParam("adults", 1)
+                .queryParam("max",    5)
                 .get(OFFERS_PATH);
 
         long responseTime = response.time();
-        log.info("Response time: {} ms", responseTime);
+        log.info("Response time: {}ms", responseTime);
 
         SoftAssertions soft = new SoftAssertions();
 
-        // TC_API_FL_003 – data array exists with at least one offer
         List<Object> data = response.jsonPath().getList("data");
-        soft.assertThat(data)
-            .as("TC_API_FL_003: 'data' array must exist and contain at least one flight offer")
-            .isNotNull()
-            .isNotEmpty();
+        soft.assertThat(data).as("data array should have at least one offer").isNotNull().isNotEmpty();
 
         if (data != null && !data.isEmpty()) {
+            // every offer should have an id
+            soft.assertThat(response.jsonPath().<String>getList("data.id"))
+                .as("every offer must have an id").doesNotContainNull();
 
-            // TC_API_FL_004 – each offer has an id
-            List<String> ids = response.jsonPath().getList("data.id");
-            soft.assertThat(ids)
-                .as("TC_API_FL_004: every offer must have an 'id' field")
-                .doesNotContainNull();
+            // origin IATA
+            String origin = response.jsonPath().getString("data[0].itineraries[0].segments[0].departure.iataCode");
+            soft.assertThat(origin).as("departure IATA should be CAI").isEqualToIgnoringCase(config.getOriginIata());
 
-            // TC_API_FL_005 – origin IATA
-            String firstOrigin = response.jsonPath()
-                    .getString("data[0].itineraries[0].segments[0].departure.iataCode");
-            soft.assertThat(firstOrigin)
-                .as("TC_API_FL_005: first segment departure IATA should be CAI")
-                .isEqualToIgnoringCase(config.getOriginIata());
+            // destination IATA — check last segment arrival
+            int segCount = response.jsonPath().<List<?>>get("data[0].itineraries[0].segments").size();
+            String dest  = response.jsonPath().getString("data[0].itineraries[0].segments[" + (segCount - 1) + "].arrival.iataCode");
+            soft.assertThat(dest).as("final arrival IATA should be RMF").isEqualToIgnoringCase(config.getDestinationIata());
 
-            // TC_API_FL_006 – destination IATA
-            List<Object> segments = response.jsonPath()
-                    .getList("data[0].itineraries[0].segments");
-            String lastArrival = response.jsonPath().getString(
-                    "data[0].itineraries[0].segments[" + (segments.size() - 1) + "].arrival.iataCode");
-            soft.assertThat(lastArrival)
-                .as("TC_API_FL_006: final segment arrival IATA should be RMF")
-                .isEqualToIgnoringCase(config.getDestinationIata());
-
-            // TC_API_FL_007 – price object with total
+            // price
             String total = response.jsonPath().getString("data[0].price.total");
-            soft.assertThat(total)
-                .as("TC_API_FL_007: price.total must be present")
-                .isNotNull()
-                .isNotBlank();
-
-            // TC_API_FL_008 – total is numeric
+            soft.assertThat(total).as("price.total should be present").isNotNull().isNotBlank();
             if (total != null) {
                 soft.assertThatCode(() -> Double.parseDouble(total))
-                    .as("TC_API_FL_008: price.total must be a numeric string")
-                    .doesNotThrowAnyException();
+                    .as("price.total should be numeric").doesNotThrowAnyException();
             }
         }
 
-        // TC_API_FL_009 – response time < 5 000 ms
-        soft.assertThat(responseTime)
-            .as("TC_API_FL_009: API response time must be under 5000 ms")
-            .isLessThan(5000L);
-
-        // TC_API_FL_010 – dictionaries section present
-        Object dictionaries = response.jsonPath().get("dictionaries");
-        soft.assertThat(dictionaries)
-            .as("TC_API_FL_010: 'dictionaries' meta section must be present")
-            .isNotNull();
+        soft.assertThat(responseTime).as("response should come back in under 5 seconds").isLessThan(5000L);
+        soft.assertThat(response.jsonPath().get("dictionaries")).as("dictionaries section should be present").isNotNull();
 
         soft.assertAll();
     }
 
-    // ── helper ────────────────────────────────────────────────────────────
+    private String departureDateIn30Days() {
+        return LocalDate.now().plusDays(30).format(DateTimeFormatter.ISO_LOCAL_DATE);
+    }
 
-    private void assumeCredentials() {
+    private void skipIfNoCredentials() {
         if (accessToken == null) {
-            throw new org.testng.SkipException(
-                "Amadeus credentials not configured – test skipped. " +
-                "Set AMADEUS_CLIENT_ID and AMADEUS_CLIENT_SECRET env vars.");
+            throw new SkipException("Amadeus credentials not set — skipping. Export AMADEUS_CLIENT_ID and AMADEUS_CLIENT_SECRET to run these.");
         }
     }
 }

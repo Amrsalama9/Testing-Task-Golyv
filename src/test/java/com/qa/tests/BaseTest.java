@@ -11,10 +11,6 @@ import org.testng.annotations.BeforeMethod;
 
 import java.lang.reflect.Method;
 
-/**
- * Base class for all UI test classes.
- * Manages driver lifecycle and ExtentReport logging per test method.
- */
 public abstract class BaseTest {
 
     protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -23,14 +19,14 @@ public abstract class BaseTest {
 
     @BeforeMethod(alwaysRun = true)
     public void setUp(Method method) {
-        log.info("=== Starting: {} ===", method.getName());
+        log.info("Starting: {}", method.getName());
         driver = DriverFactory.getDriver();
         ExtentReportManager.getTest().info("Browser: " + config.getBrowser());
     }
 
     @AfterMethod(alwaysRun = true)
     public void tearDown(Method method) {
-        log.info("=== Finished: {} ===", method.getName());
+        log.info("Done: {}", method.getName());
         DriverFactory.quitDriver();
     }
 }

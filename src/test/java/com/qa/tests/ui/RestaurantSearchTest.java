@@ -9,160 +9,102 @@ import org.testng.annotations.Test;
 
 import java.util.List;
 
-/**
- * ─────────────────────────────────────────────────────────────────────────────
- * UI Test Suite: Google Search – "restaurant near Marsa Alam"
- * ─────────────────────────────────────────────────────────────────────────────
- *
- * Test Cases Covered:
- *   TC_RS_001  Searching "restaurant near Marsa Alam" loads a SERP
- *   TC_RS_002  At least one restaurant result card is visible
- *   TC_RS_003  Sort-by button is present in the local results panel
- *   TC_RS_004  Clicking "Highest rated" reloads results without error
- *   TC_RS_005  After sorting, the first result's rating is >= the last result's rating
- *   TC_RS_006  Result cards contain a visible name / label
- */
 public class RestaurantSearchTest extends BaseTest {
 
-    // ── TC_RS_001 ──────────────────────────────────────────────────────────
-
-    @Test(description = "TC_RS_001 – Searching 'restaurant near Marsa Alam' returns a SERP",
-          priority = 1)
+    @Test(description = "TC_RS_001 - restaurant search loads a SERP")
     public void restaurantSearchReturnsSERP() {
-        GoogleSearchPage searchPage = new GoogleSearchPage(driver);
-        searchPage.open(config.getGoogleBaseUrl())
-                  .search(config.getRestaurantQuery());
+        GoogleSearchPage page = new GoogleSearchPage(driver);
+        page.open(config.getGoogleBaseUrl()).search(config.getRestaurantQuery());
 
         String url = driver.getCurrentUrl();
         log.info("SERP URL: {}", url);
-        ExtentReportManager.getTest().info("SERP URL: " + url);
 
         SoftAssertions soft = new SoftAssertions();
-        soft.assertThat(url)
-            .as("URL should contain query-related parameter")
-            .containsIgnoringCase("marsa");
+        soft.assertThat(url).containsIgnoringCase("marsa");
         soft.assertAll();
     }
 
-    // ── TC_RS_002 ──────────────────────────────────────────────────────────
-
-    @Test(description = "TC_RS_002 – At least one restaurant result card is displayed",
-          priority = 2)
+    @Test(description = "TC_RS_002 - at least one restaurant card is shown", priority = 2)
     public void restaurantResultsArePresent() {
-        GoogleSearchPage searchPage = new GoogleSearchPage(driver);
-        searchPage.open(config.getGoogleBaseUrl())
-                  .search(config.getRestaurantQuery());
+        GoogleSearchPage page = new GoogleSearchPage(driver);
+        page.open(config.getGoogleBaseUrl()).search(config.getRestaurantQuery());
 
-        List<WebElement> cards = searchPage.getRestaurantCards();
-        log.info("Restaurant cards found: {}", cards.size());
+        List<WebElement> cards = page.getRestaurantCards();
+        log.info("Cards found: {}", cards.size());
         ExtentReportManager.getTest().info("Restaurant cards: " + cards.size());
 
         SoftAssertions soft = new SoftAssertions();
-        soft.assertThat(cards)
-            .as("At least one restaurant card should appear in the local panel")
-            .isNotEmpty();
+        soft.assertThat(cards).as("local panel should have at least one restaurant").isNotEmpty();
         soft.assertAll();
     }
 
-    // ── TC_RS_003 ──────────────────────────────────────────────────────────
-
-    @Test(description = "TC_RS_003 – Sort-by button is present in the results panel",
-          priority = 3)
+    @Test(description = "TC_RS_003 - sort button is available", priority = 3)
     public void sortButtonIsPresent() {
-        GoogleSearchPage searchPage = new GoogleSearchPage(driver);
-        searchPage.open(config.getGoogleBaseUrl())
-                  .search(config.getRestaurantQuery());
-
-        boolean sortPresent = searchPage.isSortButtonPresent();
-        log.info("Sort button present: {}", sortPresent);
-        ExtentReportManager.getTest().info("Sort button visible: " + sortPresent);
+        GoogleSearchPage page = new GoogleSearchPage(driver);
+        page.open(config.getGoogleBaseUrl()).search(config.getRestaurantQuery());
 
         SoftAssertions soft = new SoftAssertions();
-        soft.assertThat(sortPresent)
-            .as("A sort button should be available within the local results panel")
+        soft.assertThat(page.isSortButtonPresent())
+            .as("sort/filter button should be visible in the local results panel")
             .isTrue();
         soft.assertAll();
     }
 
-    // ── TC_RS_004 ──────────────────────────────────────────────────────────
+    @Test(description = "TC_RS_004 - sorting by highest rated doesn't break the page", priority = 4)
+    public void sortByHighestRatedWorks() {
+        GoogleSearchPage page = new GoogleSearchPage(driver);
+        page.open(config.getGoogleBaseUrl()).search(config.getRestaurantQuery());
+        page.sortByHighestRated();
 
-    @Test(description = "TC_RS_004 – Sorting by 'Highest rated' completes without error",
-          priority = 4)
-    public void sortByHighestRatedExecutesWithoutError() {
-        GoogleSearchPage searchPage = new GoogleSearchPage(driver);
-        searchPage.open(config.getGoogleBaseUrl())
-                  .search(config.getRestaurantQuery());
-
-        searchPage.sortByHighestRated();
-
-        List<WebElement> cards = searchPage.getRestaurantCards();
-        log.info("Restaurant cards after sort: {}", cards.size());
-        ExtentReportManager.getTest().info("Cards after sort: " + cards.size());
+        List<WebElement> cards = page.getRestaurantCards();
+        log.info("Cards after sort: {}", cards.size());
 
         SoftAssertions soft = new SoftAssertions();
-        soft.assertThat(cards)
-            .as("Results should still be present after sorting by rating")
-            .isNotEmpty();
+        soft.assertThat(cards).as("results should still be there after sorting").isNotEmpty();
         soft.assertAll();
     }
 
-    // ── TC_RS_005 ──────────────────────────────────────────────────────────
+    @Test(description = "TC_RS_005 - after highest rated sort, first card rating >= last card rating", priority = 5)
+    public void sortedResultsAreInDescendingOrder() {
+        GoogleSearchPage page = new GoogleSearchPage(driver);
+        page.open(config.getGoogleBaseUrl()).search(config.getRestaurantQuery());
+        page.sortByHighestRated();
 
-    @Test(description = "TC_RS_005 – After 'Highest rated' sort, first result rating >= last",
-          priority = 5)
-    public void sortedResultsAreInDescendingRatingOrder() {
-        GoogleSearchPage searchPage = new GoogleSearchPage(driver);
-        searchPage.open(config.getGoogleBaseUrl())
-                  .search(config.getRestaurantQuery());
+        List<WebElement> cards = page.getRestaurantCards();
 
-        searchPage.sortByHighestRated();
-
-        List<WebElement> cards = searchPage.getRestaurantCards();
         if (cards.size() < 2) {
-            log.warn("Only {} card(s) returned – skipping ordering assertion", cards.size());
-            ExtentReportManager.getTest().info("Not enough cards to verify order");
+            log.warn("Only {} card(s) — can't verify sort order with a single result", cards.size());
             return;
         }
 
-        String firstRatingStr = searchPage.getRatingForCard(0);
-        String lastRatingStr  = searchPage.getRatingForCard(cards.size() - 1);
-
-        log.info("First rating: '{}', last rating: '{}'", firstRatingStr, lastRatingStr);
-        ExtentReportManager.getTest().info(
-            "First rating: " + firstRatingStr + " | Last rating: " + lastRatingStr);
+        String firstRaw = page.getRatingForCard(0);
+        String lastRaw  = page.getRatingForCard(cards.size() - 1);
+        log.info("First: {} | Last: {}", firstRaw, lastRaw);
+        ExtentReportManager.getTest().info("First rating: " + firstRaw + " | Last rating: " + lastRaw);
 
         SoftAssertions soft = new SoftAssertions();
         try {
-            double first = Double.parseDouble(firstRatingStr);
-            double last  = Double.parseDouble(lastRatingStr);
+            double first = Double.parseDouble(firstRaw);
+            double last  = Double.parseDouble(lastRaw);
             soft.assertThat(first)
-                .as("First result rating should be >= last result rating after 'Highest rated' sort")
+                .as("first card should have a rating >= last card after sorting by highest rated")
                 .isGreaterThanOrEqualTo(last);
         } catch (NumberFormatException e) {
-            log.warn("Could not parse rating values for ordering check");
-            soft.fail("Rating values could not be parsed: first='" + firstRatingStr +
-                      "', last='" + lastRatingStr + "'");
+            soft.fail("couldn't parse ratings — first='" + firstRaw + "' last='" + lastRaw + "'");
         }
         soft.assertAll();
     }
 
-    // ── TC_RS_006 ──────────────────────────────────────────────────────────
+    @Test(description = "TC_RS_006 - every visible card has some text", priority = 6)
+    public void allCardsHaveText() {
+        GoogleSearchPage page = new GoogleSearchPage(driver);
+        page.open(config.getGoogleBaseUrl()).search(config.getRestaurantQuery());
 
-    @Test(description = "TC_RS_006 – Each visible restaurant card has a non-blank name",
-          priority = 6)
-    public void allResultCardsHaveNames() {
-        GoogleSearchPage searchPage = new GoogleSearchPage(driver);
-        searchPage.open(config.getGoogleBaseUrl())
-                  .search(config.getRestaurantQuery());
-
-        List<WebElement> cards = searchPage.getRestaurantCards();
-        ExtentReportManager.getTest().info("Checking names for " + cards.size() + " cards");
-
+        List<WebElement> cards = page.getRestaurantCards();
         SoftAssertions soft = new SoftAssertions();
         for (int i = 0; i < cards.size(); i++) {
-            String text = cards.get(i).getText();
-            soft.assertThat(text)
-                .as("Restaurant card [" + i + "] should have visible text")
+            soft.assertThat(cards.get(i).getText())
+                .as("card[" + i + "] should have visible text")
                 .isNotBlank();
         }
         soft.assertAll();

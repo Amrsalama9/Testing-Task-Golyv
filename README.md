@@ -1,206 +1,92 @@
-# Trip Planner – QA Automation Suite
+# Testing Task – Golyv
 
-End-to-end and API automation covering the Cairo → Marsa Alam travel planning scenario on Google Search and Google Flights.
+Automation suite for the trip planning scenario: user searches for flights from Cairo to Marsa Alam, checks the weather there, then looks up nearby restaurants and sorts them by rating.
 
----
-
-## Scenario Overview
-
-A user planning a trip performs the following steps:
-
-1. Searches for **flight options from Cairo to Marsa Alam** via Google Flights
-2. Looks up the **weather in Marsa Alam** via Google Search
-3. Verifies the weather widget is relevant to Marsa Alam
-4. Searches for **restaurants near Marsa Alam** via Google Search
-5. Sorts results by **Highest Rated**
+Covers both the UI layer (Google Search + Google Flights via Selenium) and the API layer (Amadeus, OpenWeatherMap, Google Places via REST Assured).
 
 ---
 
-## Project Structure
+## What's being tested
+
+1. Google Flights – searching Cairo (CAI) → Marsa Alam (RMF) and verifying results come back with airline names and prices
+2. Google Search weather widget – making sure the widget actually shows up, shows the right city, and has a sensible temperature
+3. Google Search restaurants – searching "restaurant near Marsa Alam", sorting by Highest Rated, and confirming the order is actually descending
+
+---
+
+## Project layout
 
 ```
-trip-planner-qa/
-├── .devcontainer/
-│   └── devcontainer.json          # GitHub Codespaces configuration
-├── .github/
-│   └── workflows/
-│       └── ci.yml                 # GitHub Actions CI pipeline
-├── src/
-│   └── test/
-│       ├── java/com/qa/
-│       │   ├── config/
-│       │   │   └── ConfigReader.java
-│       │   ├── listeners/
-│       │   │   ├── ExtentReportListener.java
-│       │   │   ├── RetryListener.java
-│       │   │   └── ScreenshotListener.java
-│       │   ├── pages/
-│       │   │   ├── BasePage.java
-│       │   │   ├── GoogleFlightsPage.java
-│       │   │   └── GoogleSearchPage.java
-│       │   ├── tests/
-│       │   │   ├── BaseTest.java
-│       │   │   ├── api/
-│       │   │   │   ├── BaseApiTest.java
-│       │   │   │   ├── FlightApiTest.java
-│       │   │   │   ├── WeatherApiTest.java
-│       │   │   │   └── RestaurantApiTest.java
-│       │   │   └── ui/
-│       │   │       ├── FlightSearchTest.java
-│       │   │       ├── WeatherSearchTest.java
-│       │   │       └── RestaurantSearchTest.java
-│       │   └── utils/
-│       │       ├── DriverFactory.java
-│       │       ├── ExtentReportManager.java
-│       │       ├── RetryAnalyzer.java
-│       │       ├── ScreenshotUtils.java
-│       │       └── WaitUtils.java
-│       └── resources/
-│           ├── config.properties
-│           ├── logback-test.xml
-│           └── testng.xml
-├── docs/
-│   └── TEST_CASES.md
-├── pom.xml
-└── README.md
+src/test/java/com/qa/
+├── config/         ConfigReader – loads config.properties, env vars override file values
+├── listeners/      TestNG listeners for reporting, screenshots, retry
+├── pages/          Page Objects (BasePage, GoogleSearchPage, GoogleFlightsPage)
+├── tests/
+│   ├── ui/         FlightSearchTest, WeatherSearchTest, RestaurantSearchTest
+│   └── api/        FlightApiTest, WeatherApiTest, RestaurantApiTest
+└── utils/          DriverFactory, WaitUtils, ExtentReportManager, etc.
 ```
 
 ---
 
-## Design Patterns Applied
+## Running it
 
-| Pattern | Where used |
-|---|---|
-| **Page Object Model (POM)** | `pages/` – every page is its own class extending `BasePage` |
-| **Singleton** | `ConfigReader`, `ExtentReportManager` |
-| **Factory** | `DriverFactory` – creates the right WebDriver by config |
-| **Thread-Local** | `DriverFactory` & `ExtentReportManager` – parallel-test-safe |
-| **Builder** | REST Assured `RequestSpecBuilder` in `BaseApiTest` |
-| **Template Method** | `BaseTest.setUp()` / `tearDown()` → subclasses just write `@Test` methods |
-| **Fluent Interface** | Page methods return `this` for readable chained calls |
-| **Listener / Observer** | TestNG `ITestListener` used for reporting, screenshots, retry |
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Language | Java 17 |
-| Build | Maven 3.x |
-| Browser automation | Selenium 4 |
-| Driver management | WebDriverManager 5 |
-| API testing | REST Assured 5 |
-| Test runner | TestNG 7 |
-| Reporting | ExtentReports 5 (HTML, dark theme) |
-| Logging | SLF4J + Logback |
-| Assertions | AssertJ (fluent soft assertions) |
-| CI/CD | GitHub Actions |
-| Dev environment | GitHub Codespaces |
-
----
-
-## Quick Start
-
-### Prerequisites
-
-- Java 17+
-- Maven 3.8+
-- Google Chrome (or Firefox / Edge)
-
-### Run all tests (headless)
+Prerequisites: Java 17, Maven, Chrome installed.
 
 ```bash
+# everything
 mvn test
-```
 
-### Run with a specific browser
-
-```bash
-mvn test -Dbrowser=firefox -Dheadless=true
-```
-
-### Run only UI tests
-
-```bash
+# just UI
 mvn test -Dgroups=ui
-```
 
-### Run only API tests
-
-```bash
+# just API
 mvn test -Dgroups=api
+
+# different browser
+mvn test -Dbrowser=firefox
+
+# headed (useful when debugging a locator)
+mvn test -Dheadless=false
 ```
+
+Reports go to `test-output/reports/`. Screenshots on failure go to `test-output/screenshots/`.
 
 ---
 
-## GitHub Codespaces
+## API keys
 
-Click **Code → Codespaces → New codespace** on the repository page.
-The container installs Java 17, Maven, and Chrome automatically via `devcontainer.json`.
-Once the terminal is ready:
+The API tests skip automatically if the keys aren't set — they won't fail the build. To run them properly:
 
 ```bash
-mvn test
+export OWM_API_KEY=your_key            # openweathermap.org
+export GOOGLE_PLACES_KEY=your_key      # Google Cloud Console → Places API
+export AMADEUS_CLIENT_ID=your_id       # developers.amadeus.com
+export AMADEUS_CLIENT_SECRET=your_sec
 ```
 
----
-
-## Environment Variables (API Tests)
-
-API tests skip gracefully when credentials are absent; they never fail hard.
-Set these in your shell, Codespace secrets, or GitHub Actions secrets:
-
-| Variable | Purpose |
-|---|---|
-| `OWM_API_KEY` | OpenWeatherMap API key |
-| `GOOGLE_PLACES_KEY` | Google Places API key |
-| `AMADEUS_CLIENT_ID` | Amadeus for Developers – client ID |
-| `AMADEUS_CLIENT_SECRET` | Amadeus for Developers – client secret |
+For CI, add these as repository secrets in GitHub → Settings → Secrets.
 
 ---
 
-## Test Reports
+## Codespaces
 
-After a run, open:
-
-```
-test-output/reports/TripPlannerReport_<timestamp>.html
-```
-
-Screenshots on failure are saved under:
-
-```
-test-output/screenshots/
-```
+Open the repo, click Code → Codespaces → New codespace. Java 17, Maven and Chrome are set up automatically by the devcontainer. Then just run `mvn test` in the terminal.
 
 ---
 
-## Test Cases Summary
+## Design notes
 
-See [docs/TEST_CASES.md](docs/TEST_CASES.md) for the full test case catalogue with steps, expected results, and priority.
-
----
-
-## CI Pipeline
-
-`.github/workflows/ci.yml` runs on every push to `main` or `develop`:
-
-1. **Compile & Validate** – Maven compilation check
-2. **UI Tests** – Chrome headless, uploads HTML report and failure screenshots as artifacts
-3. **API Tests** – Reads secrets from GitHub Actions, skips gracefully if not configured
+- **POM** – every page is its own class, locators are private constants, no raw Selenium calls in test classes
+- **Thread-local driver** – each test class gets its own browser instance, safe to run in parallel
+- **Soft assertions** – tests collect all failures before throwing, so you see everything that's wrong in one run rather than stopping at the first mismatch
+- **Retry** – flaky network tests (Google UI especially) retry up to 2 times before being counted as failures
+- **Config** – everything in `config.properties`, JVM system properties always win so `-Dbrowser=firefox` works without editing any file
 
 ---
 
-## Retry Strategy
+## Test cases
 
-Flaky tests (network-dependent Google UI) are retried up to **2 times** automatically via `RetryAnalyzer` + `RetryListener` before being marked as failures.
+Full catalogue with steps and expected results is in `docs/TEST_CASES.md` (also available as an Excel sheet).
 
----
-
-## Contributing
-
-1. Branch from `develop`
-2. Add / update page objects and test classes
-3. Run `mvn test` locally before pushing
-4. CI gates must pass before merge to `main`
+52 test cases total: 20 UI, 32 API.
