@@ -1,0 +1,122 @@
+name: Trip Planner QA – CI Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      browser:
+        description: "Browser to run UI tests (chrome | firefox)"
+        required: false
+        default: "chrome"
+      run_api_tests:
+        description: "Run API tests (true | false)"
+        required: false
+        default: "true"
+
+env:
+  JAVA_VERSION: "17"
+  BROWSER: ${{ github.event.inputs.browser || 'chrome' }}
+
+jobs:
+
+  # ── Job 1: Static analysis & compilation check ──────────────────────────
+  build:
+    name: Compile & Validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      - name: Compile project
+        run: mvn compile test-compile -q
+
+  # ── Job 2: UI Tests ─────────────────────────────────────────────────────
+  ui-tests:
+    name: UI Tests (${{ github.event.inputs.browser || 'chrome' }})
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      - name: Install Chrome
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y google-chrome-stable
+
+      - name: Run UI tests
+        run: |
+          mvn test \
+            -Dbrowser=${{ env.BROWSER }} \
+            -Dheadless=true \
+            -Dsurefire.suiteXmlFiles=src/test/resources/testng.xml \
+            -Dgroups=ui \
+            -q
+        env:
+          DISPLAY: :99
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test-report
+          path: test-output/reports/
+
+      - name: Upload screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failure-screenshots
+          path: test-output/screenshots/
+
+  # ── Job 3: API Tests ─────────────────────────────────────────────────────
+  api-tests:
+    name: API Contract Tests
+    needs: build
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.run_api_tests != 'false' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      - name: Run API tests
+        run: |
+          mvn test \
+            -Dsurefire.suiteXmlFiles=src/test/resources/testng.xml \
+            -Dgroups=api \
+            -q
+        env:
+          OWM_API_KEY:            ${{ secrets.OWM_API_KEY }}
+          GOOGLE_PLACES_KEY:      ${{ secrets.GOOGLE_PLACES_KEY }}
+          AMADEUS_CLIENT_ID:      ${{ secrets.AMADEUS_CLIENT_ID }}
+          AMADEUS_CLIENT_SECRET:  ${{ secrets.AMADEUS_CLIENT_SECRET }}
+
+      - name: Upload API test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-test-report
+          path: test-output/reports/

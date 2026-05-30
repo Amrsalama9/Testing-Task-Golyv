@@ -1,0 +1,25 @@
+# Maven
+target/
+*.class
+
+# Test output (generated at runtime)
+test-output/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets – never commit keys
+.env
+*.env
+
+# Logs
+*.log

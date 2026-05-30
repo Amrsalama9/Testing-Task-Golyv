@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+
+<!--
+    Trip Planner – Master TestNG Suite
+    Runs UI tests (Google Search, Flights, Weather, Restaurants) and
+    API contract tests (Amadeus, OpenWeatherMap, Google Places) in parallel
+    where safe, sequentially where ordering matters.
+-->
+<suite name="TripPlannerSuite" verbose="1" parallel="classes" thread-count="2">
+
+    <listeners>
+        <listener class-name="com.qa.listeners.ExtentReportListener"/>
+        <listener class-name="com.qa.listeners.ScreenshotListener"/>
+        <listener class-name="com.qa.listeners.RetryListener"/>
+    </listeners>
+
+    <!-- ── UI Tests ──────────────────────────────────────────────── -->
+    <test name="UI – Google Flights: Cairo to Marsa Alam">
+        <classes>
+            <class name="com.qa.tests.ui.FlightSearchTest"/>
+        </classes>
+    </test>
+
+    <test name="UI – Google Search: Marsa Alam Weather">
+        <classes>
+            <class name="com.qa.tests.ui.WeatherSearchTest"/>
+        </classes>
+    </test>
+
+    <test name="UI – Google Search: Restaurants near Marsa Alam">
+        <classes>
+            <class name="com.qa.tests.ui.RestaurantSearchTest"/>
+        </classes>
+    </test>
+
+    <!-- ── API Contract Tests ────────────────────────────────────── -->
+    <test name="API – Amadeus Flight Offers">
+        <classes>
+            <class name="com.qa.tests.api.FlightApiTest"/>
+        </classes>
+    </test>
+
+    <test name="API – OpenWeatherMap Weather">
+        <classes>
+            <class name="com.qa.tests.api.WeatherApiTest"/>
+        </classes>
+    </test>
+
+    <test name="API – Google Places Restaurants">
+        <classes>
+            <class name="com.qa.tests.api.RestaurantApiTest"/>
+        </classes>
+    </test>
+
+</suite>

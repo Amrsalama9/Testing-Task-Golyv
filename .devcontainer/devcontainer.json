@@ -1,0 +1,47 @@
+{
+  "name": "Trip Planner QA Automation",
+  "image": "mcr.microsoft.com/devcontainers/java:17-bullseye",
+
+  "features": {
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "17",
+      "installMaven": true,
+      "installGradle": false
+    },
+    "ghcr.io/devcontainers/features/google-chrome:1": {}
+  },
+
+  "postCreateCommand": "mvn dependency:resolve -q",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "vscjava.vscode-maven",
+        "vscjava.vscode-java-test",
+        "redhat.java",
+        "GabrielBB.vscode-lombok"
+      ],
+      "settings": {
+        "java.configuration.runtimes": [
+          {
+            "name": "JavaSE-17",
+            "default": true
+          }
+        ],
+        "editor.formatOnSave": true,
+        "editor.tabSize": 4
+      }
+    }
+  },
+
+  "remoteEnv": {
+    "OWM_API_KEY":           "${localEnv:OWM_API_KEY}",
+    "GOOGLE_PLACES_KEY":     "${localEnv:GOOGLE_PLACES_KEY}",
+    "AMADEUS_CLIENT_ID":     "${localEnv:AMADEUS_CLIENT_ID}",
+    "AMADEUS_CLIENT_SECRET": "${localEnv:AMADEUS_CLIENT_SECRET}"
+  },
+
+  "forwardPorts": [],
+  "portsAttributes": {}
+}
